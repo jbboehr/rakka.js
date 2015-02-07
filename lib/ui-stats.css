@@ -1,15 +1,18 @@
 
-.rakka-ui-controlbar {
+.rakka-ui-stats {
 	position: fixed;
-	top: 0;
+	bottom: 0;
 	left: 0;
-	width: 100%;
-	padding: 6px;
-	border-bottom: 1px solid #ccc;
-	background-color: rgba(255, 255, 255, 0.75);
+	display: inline-block;
+	border: 1px solid black;
+	padding: 5px;
+	margin: 0;
+	border-left: 0;
+	border-bottom: 0;
+	background-color: rgba(255, 255, 255, 0.7);
 }
 
-.rakka-ui-controlbar.user-active {
+.rakka-ui-stats.user-active {
 	display: block;
 	visibility: visible;
 	opacity: 1;
@@ -20,7 +23,7 @@
 	
 }
 
-.rakka-ui-controlbar.user-inactive {
+.rakka-ui-stats.user-inactive {
 	display: block;
 	visibility: hidden;
 	opacity: 0;
@@ -30,22 +33,7 @@
 		    transition: visibility 1.0s, opacity 1.0s;
 }
 
-.rakka-ui-controlbar.force-show {
+.rakka-ui-stats.force-show {
 	visibility: visible;
 	opacity: 1;
-}
-
-.rakka-ui-controlbar > * {
-	display: inline-block;
-	vertical-align: middle;
-	margin-right: 0.6em;
-}
-
-.rakka-ui-controlbar > input[type="range"] {
-	max-width: 25%;
-	display: inline-block;
-}
-
-.rakka-ui-controlbar button[data-action="auto-hide"] {
-	float: right;
 }
