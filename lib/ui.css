@@ -1,4 +1,34 @@
 
+/* common */
+
+.rakka-user-active .rakka-ui-component {
+	display: block;
+	visibility: visible;
+	opacity: 1;
+	-webkit-transition: visibility 0.1s, opacity 0.1s;
+	   -moz-transition: visibility 0.1s, opacity 0.1s;
+	     -o-transition: visibility 0.1s, opacity 0.1s;
+		    transition: visibility 0.1s, opacity 0.1s;
+}
+
+.rakka-user-inactive .rakka-ui-component {
+	display: block;
+	visibility: hidden;
+	opacity: 0;
+	-webkit-transition: visibility 1.0s, opacity 1.0s;
+	   -moz-transition: visibility 1.0s, opacity 1.0s;
+	     -o-transition: visibility 1.0s, opacity 1.0s;
+		    transition: visibility 1.0s, opacity 1.0s;
+}
+
+.rakka-no-auto-hide .rakka-ui-component {
+	visibility: visible;
+	opacity: 1;
+}
+
+
+
+
 /* control bar */
 
 .rakka-ui-controlbar {
@@ -9,32 +39,7 @@
 	padding: 6px;
 	border-bottom: 1px solid #ccc;
 	background-color: rgba(255, 255, 255, 0.75);
-}
-
-.rakka-ui-controlbar.user-active {
-	display: block;
-	visibility: visible;
-	opacity: 1;
-	-webkit-transition: visibility 0.1s, opacity 0.1s;
-	   -moz-transition: visibility 0.1s, opacity 0.1s;
-	     -o-transition: visibility 0.1s, opacity 0.1s;
-		    transition: visibility 0.1s, opacity 0.1s;
-	
-}
-
-.rakka-ui-controlbar.user-inactive {
-	display: block;
-	visibility: hidden;
-	opacity: 0;
-	-webkit-transition: visibility 1.0s, opacity 1.0s;
-	   -moz-transition: visibility 1.0s, opacity 1.0s;
-	     -o-transition: visibility 1.0s, opacity 1.0s;
-		    transition: visibility 1.0s, opacity 1.0s;
-}
-
-.rakka-ui-controlbar.force-show {
-	visibility: visible;
-	opacity: 1;
+	z-index: 10;
 }
 
 .rakka-ui-controlbar > * {
@@ -62,35 +67,59 @@
 	left: 0;
 	display: inline-block;
 	border: 1px solid black;
-	padding: 5px;
+	padding-top: 5px;
+	padding-bottom: 5px;
 	margin: 0;
 	border-left: 0;
 	border-bottom: 0;
 	background-color: rgba(255, 255, 255, 0.7);
-}
-
-.rakka-ui-stats.user-active {
-	display: block;
-	visibility: visible;
-	opacity: 1;
-	-webkit-transition: visibility 0.1s, opacity 0.1s;
-	   -moz-transition: visibility 0.1s, opacity 0.1s;
-	     -o-transition: visibility 0.1s, opacity 0.1s;
-		    transition: visibility 0.1s, opacity 0.1s;
 	
+	/*
+	min-width: 8em;
+	min-height: 8em;
+	*/
 }
 
-.rakka-ui-stats.user-inactive {
-	display: block;
-	visibility: hidden;
-	opacity: 0;
-	-webkit-transition: visibility 1.0s, opacity 1.0s;
-	   -moz-transition: visibility 1.0s, opacity 1.0s;
-	     -o-transition: visibility 1.0s, opacity 1.0s;
-		    transition: visibility 1.0s, opacity 1.0s;
+.rakka-ui-stats > * {
+	margin-left: 1em;
+	margin-right: 1em;
+	color: #666;
+	font-size: 1.2em;
 }
 
-.rakka-ui-stats.force-show {
-	visibility: visible;
-	opacity: 1;
+
+/* list */
+.rakka-ui-list {
+	position: fixed;
+	bottom: 0;
+	right: 0;
+	display: inline-block;
+	border: 1px solid black;
+	margin: 0;
+	border-right: 0;
+	border-bottom: 0;
+	background-color: rgba(255, 255, 255, 0.7);
+	
+	/*
+	padding: 5px;
+	min-width: 8em;
+	min-height: 8em;
+	*/
 }
+
+.rakka-ui-list > ul {
+	margin: 0;
+	padding: 0;
+	display: table-cell;
+	list-style: none;
+}
+
+.rakka-ui-list > ul > li {
+	margin: 0.5em;
+}
+
+.rakka-ui-list > ul > li > a {
+	color: #666;
+	font-size: 1.2em;
+}
+
