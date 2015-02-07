@@ -1,0 +1,7 @@
+{
+	"name": "rakka",
+	"devDependencies": {
+		"bootstrap" : "3.3.*",
+		"jquery": "2.1.*"
+	}
+}

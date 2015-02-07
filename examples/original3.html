@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<title></title>
+		
+		<link rel="stylesheet" type="text/css" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+		<script type="text/javascript" src="../node_modules/jquery/dist/jquery.min.js"></script>
+		<script type="text/javascript" src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+		
+		<!-- styles -->
+		<style type="text/css">
+			html,
+			body,
+			#container,
+			canvas {
+				width: 100%;
+				height: 100%;
+				overflow: hidden;
+			}
+		</style>
+		
+		
+		<!-- utilities -->
+		<script type="text/javascript">
+			var cacheBust = 1;
+			function loadImage(src, cb) {
+				function done(event) {
+					cb(event.type === 'load' ? null : true, img, event);
+				}
+				var img = new Image();
+				img.crossOrigin = "anonymous";
+				img.onload = done;
+				img.onerror = done;
+				img.src = src + (src.indexOf('?') === -1 ? '?' : '&') + cacheBust;// src;// + cacheBust;
+			}
+		</script>
+		
+		
+		
+		<!-- image generator -->
+		<script type="text/javascript">
+			var VidmeImageGenerator = function(options) {
+				this.url = 'https://api.vid.me/videos/list';
+				this.cacheSize = (options && options.cacheSize) || 100;
+				this.data = {
+					order : 'video_id',
+					direction : 'DESC',
+					limit : 100,
+					//maxVideoId : maxVideoId,
+					moderated : 1,
+					nsfw: 0,
+					private: 0
+				};
+				this.imagePreloadSemaphore = 0;
+				this.images = [];
+				this._semaphore = 0;
+			};
+			
+			VidmeImageGenerator.prototype.consume = function() {
+				if( this.images.length < this.cacheSize ) {
+					this.getBatch();
+				}
+				if( this.images.length ) {
+					return this.images.shift();
+				}
+			};
+			
+			VidmeImageGenerator.prototype.getBatch = function() {
+				if( this._semaphore > 0 ) {
+					return;
+				}
+				this._semaphore++;
+				
+				if( this.maxVideoId ) {
+					this.data.maxVideoId = this.maxVideoId;
+				}
+				
+				var self = this;
+				$.ajax({
+					url: this.url,
+					data: this.data
+				}).done(function(data) {
+					self.onDone(data);
+					self._semaphore--;
+				}).error(function() {
+					self._semaphore--;
+				});
+			};
+			
+			VidmeImageGenerator.prototype.onDone = function(data) {
+				var fn = this.loadImage.bind(this);
+				$.each(data.videos, fn);
+			};
+			
+			VidmeImageGenerator.prototype.loadImage = function(index, video) {
+				var id = parseInt(video.video_id);
+				if( this.maxVideoId === undefined || id < this.maxVideoId ) {
+					this.maxVideoId = id;
+				}
+				var thumb = video.thumbnail_url;
+				this._semaphore++;
+				loadImage(thumb, function(err, img) {
+					this._semaphore--;
+					if( !err ) {
+						this.images.push([img, video]);
+					}
+				}.bind(this));
+			};
+		</script>
+		
+		
+		
+		
+		
+		
+		
+		
+		<!-- canvas utility -->
+		<script type="text/javascript">
+			
+			var MCanvasImage = function(col, img, extra, index) {
+				this.col = col;
+				this.img = img;
+				this.extra = extra;
+				this.index = index;
+				this.originalWidth = img.width;
+				this.originalHeight = img.height;
+				
+				this.resize();
+			};
+			
+			MCanvasImage.prototype.resize = function() {
+				this.width = this.col.width;
+				this.height = Math.round(this.originalHeight * this.col.width / this.originalWidth);
+			};
+			
+			
+			
+			
+			
+			var MCanvasColumn = function(main, index) {
+				this.main = main;
+				this.index = index;
+				this.imageIndex = 0;
+				this.images = [];
+				this.nextCursor = 0;
+				this.nextCircCount = 0;
+				
+				this.resize();
+			};
+			
+			MCanvasColumn.prototype.resize = function() {
+				this.width = Math.floor(this.main.circWidth / this.main.nColumns);
+				this.height = this.main.circHeight;
+				this.offset = this.index * this.width;
+			};
+			
+			MCanvasColumn.prototype.fill = function() {
+				do {
+					// Preload an image if we don't already have one
+					var image;
+					if( !this.nextImage ) {
+						var t = this.main.generator.consume();
+						if( !t ) {
+							// If we can't get a new image, skip adjusting cursor for now
+							this.main.incrCursorOkay = false;
+							return;
+						}
+						var i = this.imageIndex++;
+						image = new MCanvasImage(this, t[0], t[1], i);
+						this.nextImage = image;
+					} else {
+						image = this.nextImage;
+					}
+					
+					//console.log('CIRC', this.index, this.main.circCount, this.nextCircCount);
+					//console.log('CUR', this.index, this.main.cursor, this.nextCursor);
+					
+					// Skip if cursor is behind nextCursor
+					if( this.main.circCount < this.nextCircCount ) {
+						return;
+					} else if( this.main.circCount == this.nextCircCount && this.main.cursor < this.nextCursor ) {
+						return;
+					}
+					
+					// Draw the image to the buffer
+					var newNextCursor = this.nextCursor + image.height;
+					var newNextCircCount = this.nextCircCount;
+					var needsSplit = false;
+					if( newNextCursor > this.main.circHeight ) {
+						newNextCircCount++;
+						newNextCursor -= this.main.circHeight;
+						needsSplit = true;
+					}
+					
+					// Draw the image
+					this.main.circCtx.drawImage(image.img, this.offset, this.nextCursor, this.width, image.height);
+					if( needsSplit ) {
+						// If it needs a split, draw to the top as well
+						this.main.circCtx.drawImage(image.img, this.offset, this.nextCursor - this.main.circHeight, this.width, image.height);
+					}
+					
+					// Assign the new cursor/circcount
+					this.nextCursor = newNextCursor;
+					this.nextCircCount = newNextCircCount;
+					this.nextImage = undefined;
+				} while(1);
+			};
+			
+			MCanvasColumn.prototype.draw = function() {
+			
+			};
+			
+			
+			
+			
+			var MCanvasMain = function(options) {
+				this.$container = options.container;
+				this.generator = options.generator;
+				
+				// Speed should be in pixels/second
+				this.speed = (options && options.speed) || 100;
+				this.nColumns = (options && options.nColumns) || 6;
+				
+				// Make main canvas
+				this.$canvas = $('<canvas>').appendTo(this.$container);
+				this.ctx = this.$canvas[0].getContext('2d');
+				
+				// Make circular buffer canvas
+				this.$circCanvas = $('<canvas>');// .appendTo(this.$container);
+				this.circCtx = this.$circCanvas[0].getContext('2d');
+				
+				// Resize
+				this.resize();
+				
+				// Setup cursor
+				this.cursor = 0;
+				this.circCount = 0;
+				
+				// Setup columns
+				this.columns = [];
+				for( var i = 0; i < this.nColumns; i++ ) {
+					this.columns[i] = new MCanvasColumn(this, i);
+				}
+			};
+			
+			MCanvasMain.prototype.resize = function() {
+				var width = this.$container.width();
+				var height = this.$container.height();
+				this.width = width;
+				this.height = height;
+				this.$canvas
+					.width(this.width)
+					.height(this.height)
+					.prop('width', this.width)
+					.prop('height', this.height);
+					
+				
+				this.circWidth = this.width;
+				this.circHeight = this.height * 2;
+				this.$circCanvas
+					.width(this.circWidth)
+					.height(this.circHeight)
+					.prop('width', this.circWidth)
+					.prop('height', this.circHeight);
+
+			};
+			
+			MCanvasMain.prototype.loop = function() {
+				this.incrCursorOkay = true;
+				this.calcDelta();
+				this.fill();
+				this.draw();
+				this.adjustCursor();
+			};
+			
+			MCanvasMain.prototype.calcDelta = function() {
+				// Delta time
+				var now = Date.now();
+				if( this.lastTs ) {
+					this.deltaTs = now - this.lastTs;
+				} else {
+					this.deltaTs = 0;
+				}
+				this.lastTs = now;
+				
+				// Delta pixels
+				this.deltaPixels = Math.round(this.deltaTs * this.speed / 1000);
+			};
+			
+			MCanvasMain.prototype.fill = function() {
+				for( var i = 0; i < this.nColumns; i++ ) {
+					this.columns[i].fill();
+				}
+			};
+			
+			MCanvasMain.prototype.draw = function() {
+				// Copy the circular buffer onto the canvas
+				var sx, sy, sw, sh, dx, dy, dw, dh;
+				
+				// Source/Destination with is always main width, x is always 0
+				dw = sw = this.width;
+				dx = sx = 0;
+				
+				// If cursor > height, then there's only one copy necessary
+				if( this.cursor >= this.height ) {
+					// Copy: sy = cursor - height, sh = height
+					
+					sy = this.cursor - this.height;
+					dh = sh = this.height;
+					dy = 0;
+					this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
+				} else {
+					// Copy: sy = 0, sh = cursor
+					sy = 0;
+					dh = sh = this.cursor;
+					dy = this.height - this.cursor;
+					
+					//console.log('Section1', sx, sy, sw, sh, dx, dy, dw, dh);
+					this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
+					
+					// Copy: sy = circHeight - (height - cursor)
+					sy = this.circHeight - (this.height - this.cursor);
+					dh = sh = this.height - this.cursor;
+					dy = 0;
+					
+					//console.log('Section2', sx, sy, sw, sh, dx, dy, dw, dh);
+					this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
+				}
+			};
+			
+			MCanvasMain.prototype.adjustCursor = function() {
+				if( !this.incrCursorOkay ) {
+					return;
+				}
+				
+				this.cursor += this.deltaPixels;
+				if( this.cursor > this.circHeight ) {
+					this.cursor -= this.circHeight;
+					this.circCount++;
+				}
+			};
+			
+		</script>
+		
+		
+		
+		
+		<script type="text/javascript">
+			var generator;
+			var mainMs = 1;
+			var mainInterval;
+			var mCanvas;
+			
+			function mainLoop() {
+				mCanvas.loop();
+			}
+			
+			function start() {
+				if( mainInterval ) {
+					return;
+				}
+				mainInterval = setInterval(mainLoop, mainMs);
+			}
+			
+			function stop() {
+				if( !mainInterval ) {
+					return;
+				}
+				clearInterval(mainInterval);
+				mainInterval = undefined;
+			}
+			
+			function toggle() {
+				if( mainInterval ) {
+					stop();
+				} else {
+					start();
+				}
+			}
+			
+			function onReady() {
+				generator = new VidmeImageGenerator();
+				mCanvas = new MCanvasMain({
+					container : $('#container'),
+					generator : generator,
+					speed : 500
+				});
+				$(window).on('resize', function() {
+					mCanvas.resize();
+				});
+				$(document).on('click', toggle);
+				start();
+			}
+			
+			$(onReady);
+		</script>
+	</head>
+	<body>
+		<div id="container">
+		
+		</div>
+	</body>
+</html>

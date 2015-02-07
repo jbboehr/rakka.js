@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<title></title>
+		
+		<link rel="stylesheet" type="text/css" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+		<script type="text/javascript" src="../node_modules/jquery/dist/jquery.min.js"></script>
+		<script type="text/javascript" src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+	  
+		<style type='text/css'>
+			html,
+			body,
+			#main, 
+			#container {
+				width: 100%;
+				height: 100%;
+				overflow: hidden;
+				border: 0;
+				padding: 0;
+				margin: 0;
+			}
+			canvas {
+				border: 0;
+				padding: 0;
+				margin: 0;
+			}
+			.info > a {
+				display: block;
+			}
+			input[type="range"] {
+				max-width: 500px;
+				display: inline-block;
+				margin-left: 10px;
+				vertical-align: middle;
+			}
+			#container2 {
+				position: absolute;
+				bottom: 0;
+				right: 0;
+				display: inline-block;
+				/* width: 48%;  */
+				min-height: 150px;
+				min-width: 25%;
+				border: 1px solid black;
+				padding: 5px;
+				margin: 0;
+				border-right: 0;
+				border-bottom: 0;
+				background-color: rgba(255, 255, 255, 0.7);
+			}
+			#stats {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				display: inline-block;
+				/* width: 48%;  */
+				min-height: 150px;
+				min-width: 25%;
+				border: 1px solid black;
+				padding: 5px;
+				margin: 0;
+				border-left: 0;
+				border-bottom: 0;
+				background-color: rgba(255, 255, 255, 0.7);
+			}
+			#container2, #stats {
+				font-size: 1.2em;
+				color: #000;
+			}
+			#container2 a {
+				color: #000;
+				
+			}
+		</style>
+		
+		<script type='text/javascript'>
+			$(window).load(function(){
+				var batchSize = 100;
+				var preloadSize = 200;
+				var images = [];
+				var imagePreloadInterval;
+				var maxVideoId;
+				var nColumns = 4;
+				var columnHandlers = [];
+				var mainInterval;
+				var mainMillis = 1;
+				var mainLoopLastTs = 0;
+				var shiftSize = 1;
+				var pixelsPerSecond = 100;
+				var statNCanvas = 0;
+				var statNHistory = 0;
+				var direction = 1;
+				var droppedFrames = 0;
+				var cacheBust = 1;
+
+				function loadImage(src, cb) {
+					function done(event) {
+						cb(event.type === 'load' ? null : true, img, event);
+					}
+					var img = new Image();
+					img.crossOrigin = "anonymous";
+					img.onload = done;
+					img.onerror = done;
+					img.src = src + cacheBust;
+				}
+
+				function downscaleImage(img, w, h) {
+					// Disable for now >.>
+					return img;
+					try {
+						var canvas = document.createElement('canvas');
+						canvas.width = w;
+						canvas.height = h;
+						var ctx = canvas.getContext('2d');
+						ctx.drawImage(img, 0, 0, w, h);
+						var newimg = new Image;
+						newimg.src = canvas.toDataURL('image/jpeg');
+						return newimg;
+					} catch(e) {
+						console.error(e);
+						return img;
+					}
+				}
+
+				var sinkUrl = 'https://api.vid.me/videos/list';
+				var getBatch = function(cb) {
+					$.ajax({
+						url: sinkUrl,
+						data: {
+							order : 'video_id',
+							direction : 'DESC',
+							limit : batchSize,
+							maxVideoId : maxVideoId,
+							moderated : 1,
+							nsfw: 0,
+							private: 0
+						}
+					}).done(function(data) {
+						cb(null, data);
+					}).error(function() {
+						cb(true, {});
+					})
+				}
+				/*
+				var altPage = 1;
+				function altGetBatch(cb) {
+					$.ajax({
+						url: 'https://vid.me/awesome/videos?state=success',
+						data: {
+							'page' : altPage
+						}
+					}).done(function(data) {
+						altPage++;
+						var tr = $(data).find('tbody tr');
+						var videos = [];
+						tr.each(function(index, tr) {
+							tr = $(tr);
+							var data = {};
+							data.video_id = tr.find('[data-name="video_id"]').html().trim();
+							data.full_url = tr.find('[data-name="title"] > a').attr('href');
+							data.thumbnail_url = 'https://d1wst0behutosd.cloudfront.net/thumbnails/' + data.video_id  + '.jpg';
+							data.url = ('' + data.full_url).match(/[\w\d]+$/);
+							data.complete_url = tr.find('.js-video-download-original').attr('href');
+							videos.push(data);
+						});
+						cb(null, {videos : videos});
+					}).error(function() {
+						cb(true, {});
+					});
+				}
+				getBatch = altGetBatch;
+				*/
+
+				// Get at least 100 images into memory
+				var imagePreloadSemaphore = 0;
+				function imagePreloadIntervalFunc() {
+					// Check if we need more images
+					var delta = preloadSize - images.length;
+					if( delta <= 0 ) {
+						return;
+					}
+					// Cancel if we're currently loading images
+					if( imagePreloadSemaphore > 0 ) {
+						return;
+					}
+					imagePreloadSemaphore++;
+					
+					// Need more images
+					getBatch(function(err, data) {
+						imagePreloadSemaphore--;
+						if( err ) {
+							alert('Failed to get batch');
+						} else {
+							$.each(data.videos, function(index, video) {
+								var id = parseInt(video.video_id);
+								if( maxVideoId === undefined || id < maxVideoId ) {
+									maxVideoId = id;
+								}
+								var thumb = video.thumbnail_url;
+								imagePreloadSemaphore++;
+								loadImage(thumb, function(err, img) {
+									imagePreloadSemaphore--;
+									if( !err ) {
+										images.push([img, video]);
+									}
+								});
+							});
+						}
+					})
+				}
+
+
+
+
+				// Scrolling column utility
+
+				var ScrollingColumn = function(opts) {
+					this.$container = opts.container;
+					this.index = opts.index;
+					this.nColumns = opts.nColumns;
+					this.$canvas = $("<canvas>");
+					this.$canvas.attr('data-index', '' + this.index);
+					this.$container.append(this.$canvas);
+					this.ctx = this.$canvas[0].getContext('2d');
+					this.images = [];
+					this.imageIndex = 0;
+					this.shiftSize = 0;
+					
+					this.$container2 = $('#container2');
+					this.$info = $('<div class="info">');
+					this.$container2.append(this.$info);
+					
+					this.resize();
+				};
+
+				ScrollingColumn.prototype.resize = function() {
+					// Calculate canvas size
+					this.width = Math.floor(this.$container.width() / this.nColumns);
+					this.width -= 4; // for the border - temporary
+					this.height = this.$container.height(); //Math.floor(this.width / 4 * 3);
+					this.$canvas.prop('width', this.width);
+					this.$canvas.prop('height', this.height);
+					
+					// Recalculate image sizes
+					$.each(this.images, function(index, image) {
+						this.calcImageDims(image);
+					}.bind(this));
+				};
+
+				ScrollingColumn.prototype.loop = function() {
+					// Get the last image and see if offset + height is less than canvas height
+					if( direction === 1 ) {
+						if( this.images.length ) {
+							var lastImage = this.images[this.images.length - 1];
+							if( lastImage.offset + lastImage.height < this.height ) {
+								this.consume();
+							}
+						} else {
+							this.consume();
+						}
+					}
+
+					
+					// Remove any images with an offset + height < 0 (if not backwards)
+					if( direction === 1 ) {
+						var b = this.images.length;
+						var tmp = [];
+						var $info = this.$info;
+						$.each(this.images, function(index, image) {
+							// It's in visual range
+							if( image.offset + image.height > 0 ) {
+								tmp.push(image);
+								return;
+							}
+							// It's just out of visual range (ish)
+							if( image.offset + image.height > -2000 ) {
+								tmp.push(image);
+								return;
+							}
+						});
+						this.images = tmp;
+					}
+					statNHistory += this.images.length;
+					
+					// Apply the shifts to the model
+					$.each(this.images, function(index, image) {
+						image.offset -= (direction * shiftSize);
+					});
+					
+					// Now draw the model
+					var ctx = this.ctx;
+					$.each(this.images, function(index, image) {
+						if( image.offset + image.height < 0 ) {
+							image.$info.remove();
+							return;
+						} else if( image.offset > this.height ) {
+							image.$info.remove();
+							return;
+						}
+						this.$info.append(image.$info);
+						// This means it's on screen
+						statNCanvas++;
+						// Draw the image
+						ctx.drawImage(image.image, 0, image.offset, image.width, image.height);
+						// Draw the URL
+						ctx.font = "32px bold verdana, sans-serif";
+						var tm = ctx.measureText(image.video.url);
+						ctx.globalAlpha = 0.75;
+						ctx.fillStyle = "#ffffff";
+						ctx.fillRect(0, image.offset, Math.min(image.width, tm.width + 10), 32 + 10);
+						ctx.globalAlpha = 1;
+						ctx.fillStyle = "#ff0000";
+						ctx.fillText(image.video.url, 5, image.offset + 32);
+					}.bind(this));
+				};
+
+				ScrollingColumn.prototype.calcImageDims = function(image) {
+					// Fit to the canvas width
+					image.width = this.width;
+					image.height = Math.round(image.originalHeight * this.width / image.originalWidth);
+				};
+
+				ScrollingColumn.prototype.consume = function() {
+					var uid = ++this.imageIndex;
+					var t = images.shift();
+					if( !t ) {
+						//console.log('failed to get image!');
+						return;
+					}
+					var image = t[0];
+					var video = t[1];
+					var data = {
+						uid : uid,
+						image : image,
+						originalHeight : image.height,
+						originalWidth : image.width,
+						video : video
+					};
+					this.calcImageDims(data);
+					// Try to downscale the image
+					data.imageOrig = data.image;
+					data.image = downscaleImage(image, data.width, data.height);
+					// Get current offset
+					data.offset = this.getCurrentOffset();
+					// Add info box
+					data.$info = $('<div>').attr('id', 'info-' + uid);
+					data.$info.append($('<a>')
+							  .attr('href', video.full_url)
+							  .attr('target', '_blank')
+							  .text('vid.me/' + video.url));
+					data.$info.append($('<a>')
+							  .attr('data-href', video.complete_url)
+							  .attr('class', 'js-preview')
+							  .text(' (?)'));
+					this.$info.append(data.$info);
+					this.images.push(data);
+					//return data;
+				};
+
+				ScrollingColumn.prototype.getCurrentOffset = function() {
+					if( direction === 1 ) {
+						if( this.images.length ) {
+							var lastImage = this.images[this.images.length - 1];
+							return lastImage.offset + lastImage.height;
+						} else {
+							return 0;
+						}
+					} else {
+						throw new Error("uhoh");
+					}
+				};
+
+				ScrollingColumn.prototype.getImageAtPoint = function(x, y) {
+					var matches = [];
+					$.each(this.images, function(index, image) {
+						if( image.offset > y || image.offset + image.height < y ) {
+							return;
+						}
+						matches.push(image);
+					});
+					return matches;
+				}
+
+
+
+				// Main loop
+
+				//var mainLoopMutex = false;
+				function mainLoop() {
+					//if( mainLoopMutex ) {
+					//    return;
+					//}
+					//mainLoopMutex = true;
+					
+					// Calculate the delta time and shift size
+					var oldMainLoopLastTs = mainLoopLastTs;
+					mainLoopLastTs = Date.now();
+					if( oldMainLoopLastTs ) {
+						var delta = Date.now() - oldMainLoopLastTs;
+						var cdrop = Math.floor(delta / (mainMillis + 1)) - 1;
+						if( cdrop > 0 ) {
+							droppedFrames += cdrop;
+							// Should we try to automatically adjust the main loop frequency?
+							//mainMillis++;
+							//startAll();
+						}
+						shiftSize = this.shiftSize = Math.round(delta * pixelsPerSecond / 1000);
+					}
+					
+					// Reset stats
+					statNCanvas = 0;
+					statNHistory = 0;
+					
+					// Column handlers
+					$.each(columnHandlers, function(index, handler) {
+						handler.loop();
+					});
+					
+					// Update stats
+					$('#stat-ncache').text(images.length);
+					$('#stat-ncanvas').text(statNCanvas);
+					$('#stat-nhistory').text(statNHistory);
+					$('#stat-droppedframes').text(Math.ceil(droppedFrames));
+					$('#stat-loopdelay').text(mainMillis);
+					$('#stat-pxpers').text(pixelsPerSecond);
+					$('#stat-maxvideoid').text(maxVideoId);
+					
+					// Release mutex
+					//mainLoopMutex = false;
+				}
+
+
+
+				// UI Handlers
+
+				function stopAll(event) {
+					if( imagePreloadInterval ) {
+						clearInterval(imagePreloadInterval);
+						imagePreloadInterval = undefined;
+					}
+					if( mainInterval ) {
+						clearInterval(mainInterval);
+						mainInterval = undefined;
+					}    
+				}
+				function startAll() {
+					stopAll();
+					imagePreloadInterval = setInterval(imagePreloadIntervalFunc, 1000);
+					mainInterval = setInterval(mainLoop, mainMillis);
+				}
+				function changeSpeed() {
+					var val = $('#speed').val();
+					var adjustMainMillis = false;
+					pixelsPerSecond = parseInt(val);
+					var pixelsPerMainMillis = mainMillis * pixelsPerSecond / 1000;
+					
+					var shiftFactor = 2;
+					// Adjust main millis
+					if( pixelsPerMainMillis > 0 ) {
+						mainMillis = shiftFactor + Math.round(1 / pixelsPerMainMillis);
+						adjustMainMillis = true;
+					}
+					
+					if( adjustMainMillis && mainInterval ) {
+						startAll();
+					}
+				}
+
+				function handleResize() {
+					$.each(columnHandlers, function(index, handler) {
+						handler.resize();
+					});
+				}
+
+				function reverseDirection(event) {
+					direction = (direction === 1 ? -1 : 1);
+					if( event ) {
+						$(event.target).text(direction === 1 ? 'Reverse' : 'Forward');
+					}
+				}
+
+				function toggleFullscreen() {
+					var elem = document.getElementById("main");
+					if (elem.requestFullscreen) {
+						elem.requestFullscreen();
+					} else if (elem.msRequestFullscreen) {
+						elem.msRequestFullscreen();
+					} else if (elem.mozRequestFullScreen) {
+						elem.mozRequestFullScreen();
+					} else if (elem.webkitRequestFullscreen) {
+						elem.webkitRequestFullscreen();
+					}   
+				}
+
+				function onCanvasClick(event) {
+					var elem = $(event.target);
+					var x = event.pageX - elem.offset().left;
+					var y = event.pageY - elem.offset().top;
+					var columnObject;
+					$.each(columnHandlers, function(index, v) {
+						if( elem.attr('data-index') != v.$canvas.attr('data-index') ) {
+							return;
+						}
+						columnObject = v;
+					});
+					var images = columnObject.getImageAtPoint(x, y);
+					if( images.length ) {
+						window.open(images[0].video.full_url);
+					}
+				}
+
+				function onStartStopClick(event) {
+					if( mainInterval ) {
+						mainLoopLastTs = 0;
+						$(event.target).text('Start')
+							.removeClass('btn-danger')
+							.addClass('btn-success');
+						stopAll();
+					} else {
+						startAll();
+						$(event.target).text('Stop')
+							.removeClass('btn-success')
+							.addClass('btn-danger');
+					}
+				}
+
+				function onPreviewClick(event) {
+					/*
+					$('video').remove();
+					var v = $('<video>').attr('src', $(event.target).attr('data-href'));
+					v.prop('controls', true);
+					$('body').append(v);
+					*/
+					window.open($(event.target).attr('data-href'));
+					stopAll();
+				}
+
+				var d = $(document);
+				d.on('click', '.js-start-stop', onStartStopClick);
+				d.on('change', '#speed', changeSpeed);
+				d.on('click', '.js-reverse-forward', reverseDirection);
+				d.on('click', '.js-fullscreen', toggleFullscreen);
+				d.on('click', 'canvas', onCanvasClick);
+				d.on('click', '.js-preview', onPreviewClick);
+				$(window).on('resize', handleResize);
+
+
+
+				// Main init
+
+				for( var i = 0; i < nColumns; i++ ) {
+					columnHandlers[i] = new ScrollingColumn({
+						container : $('#container'),
+						index : i,
+						nColumns : nColumns
+					});
+				}
+
+				changeSpeed(); // cough
+
+			}); 
+		</script>
+	</head>
+	<body>
+		<div id="main">
+			<div style="padding: 10px;">
+				<div class="btn btn-success js-start-stop">Start</div>
+				<div class="btn btn-warning js-reverse-forward">Reverse</div>
+				<div class="btn btn-info js-fullscreen">Full Screen</div>
+				<input id="speed" type="range" min="50" max="2000" value="100" />
+			</div>
+			<div id="container">
+			</div>
+
+			<div id="stats">
+				<div>Images in preload cache: <span id="stat-ncache"></span></div>
+				<div>Images in history: <span id="stat-nhistory"></span></div>
+				<div>Images in canvas: <span id="stat-ncanvas"></span></div>
+				<div>Loop delay (ms): <span id="stat-loopdelay"></span></div>
+				<div>Pixels/s: <span id="stat-pxpers"></span></div>
+				<div>Dropped Frames: <span id="stat-droppedframes"></span></div>
+				<div>Max video ID: <span id="stat-maxvideoid"></span></div>
+			</div>
+			<div id="container2">
+			</div>
+		</div>
+	</body>
+</html>
+
