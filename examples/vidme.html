@@ -8,10 +8,15 @@
 		<script type="text/javascript" src="../node_modules/jquery/dist/jquery.min.js"></script>
 		<script type="text/javascript" src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 		
+		<link rel="stylesheet" type="text/css" href="../lib/ui-controlbar.css">
+		
 		<script type="text/javascript" src="../lib/image.js"></script>
 		<script type="text/javascript" src="../lib/generator.js"></script>
 		<script type="text/javascript" src="../lib/column.js"></script>
 		<script type="text/javascript" src="../lib/rakka.js"></script>
+		
+		<script type="text/javascript" src="../lib/ui-controlbar.js"></script>
+		<script type="text/javascript" src="../lib/ui.js"></script>
 		
 		<script type="text/javascript" src="../lib/generator-vidme.js"></script>
 		
@@ -35,13 +40,11 @@
 					speed : 500,
 					debug : false
 				});
-				$(window).on('resize', function() {
-					rakka.resize();
+				/* ui */ ui = new RakkaUI({
+					rakka: rakka,
+					container: $('body'),
+					controlBar: true
 				});
-				$(document).on('click', function() {
-					rakka.toggle();
-				});
-				rakka.start();
 			}
 			
 			$(onReady);
