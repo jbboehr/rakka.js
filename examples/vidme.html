@@ -51,6 +51,9 @@
 					controlBar: true,
 					stats: true
 				});
+				$(window).on('resize', function() {
+					rakka.resize();
+				});
 			}
 			
 			$(onReady);
