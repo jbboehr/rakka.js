@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<title></title>
+		
+		<link rel="stylesheet" type="text/css" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+		<script type="text/javascript" src="../node_modules/jquery/dist/jquery.min.js"></script>
+		<script type="text/javascript" src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+		
+		<!-- styles -->
+		<style type="text/css">
+			html,
+			body,
+			#container,
+			canvas {
+				width: 100%;
+				height: 100%;
+				overflow: hidden;
+			}
+		</style>
+		
+		
+		<!-- utilities -->
+		<script type="text/javascript">
+			var cacheBust = 1;
+			function loadImage(src, cb) {
+				function done(event) {
+					cb(event.type === 'load' ? null : true, img, event);
+				}
+				var img = new Image();
+				img.crossOrigin = "anonymous";
+				img.onload = done;
+				img.onerror = done;
+				img.src = src + (src.indexOf('?') === -1 ? '?' : '&') + cacheBust;// src;// + cacheBust;
+			}
+		</script>
+		
+		
+		<!-- image generator -->
+		<script type="text/javascript">
+			var VidmeImageGenerator = function(options) {
+				this.url = 'https://api.vid.me/videos/list';
+				this.cacheSize = (options && options.cacheSize) || 100;
+				this.data = {
+					order : 'video_id',
+					direction : 'DESC',
+					limit : 100,
+					//maxVideoId : maxVideoId,
+					moderated : 1,
+					nsfw: 0,
+					private: 0
+				};
+				this.imagePreloadSemaphore = 0;
+				this.images = [];
+				this._semaphore = 0;
+			};
+			
+			VidmeImageGenerator.prototype.consume = function() {
+				if( this.images.length < this.cacheSize ) {
+					this.getBatch();
+				}
+				if( this.images.length ) {
+					return this.images.shift();
+				}
+			};
+			
+			VidmeImageGenerator.prototype.getBatch = function() {
+				if( this._semaphore > 0 ) {
+					return;
+				}
+				this._semaphore++;
+				
+				if( this.maxVideoId ) {
+					this.data.maxVideoId = this.maxVideoId;
+				}
+				
+				var self = this;
+				$.ajax({
+					url: this.url,
+					data: this.data
+				}).done(function(data) {
+					self.onDone(data);
+					self._semaphore--;
+				}).error(function() {
+					self._semaphore--;
+				});
+			};
+			
+			VidmeImageGenerator.prototype.onDone = function(data) {
+				var fn = this.loadImage.bind(this);
+				$.each(data.videos, fn);
+			};
+			
+			VidmeImageGenerator.prototype.loadImage = function(index, video) {
+				var id = parseInt(video.video_id);
+				if( this.maxVideoId === undefined || id < this.maxVideoId ) {
+					this.maxVideoId = id;
+				}
+				var thumb = video.thumbnail_url;
+				this._semaphore++;
+				loadImage(thumb, function(err, img) {
+					this._semaphore--;
+					if( !err ) {
+						this.images.push([img, video]);
+					}
+				}.bind(this));
+			};
+		</script>
+		
+		
+		
+		
+		
+		<!-- canvas utility -->
+		<script type="text/javascript">
+			var MCanvasImage = function(col, img, extra, index) {
+				this.col = col;
+				this.img = img;
+				this.extra = extra;
+				this.index = index;
+				this.originalWidth = img.width;
+				this.originalHeight = img.height;
+				
+				this.resize();
+				console.log(this);
+			};
+			
+			MCanvasImage.prototype.resize = function() {
+				this.width = this.col.width;
+				this.height = Math.round(this.originalHeight * this.col.width / this.originalWidth);
+			};
+			
+			MCanvasImage.prototype.draw = function() {
+				var ctx = this.col.main.ctx;
+				var offheight = this.offset + this.height;
+				// Ignore if completely offscreen
+				if( this.offset > this.col.height ) {
+					return;
+				} else if( offheight < 0 ) {
+					return;
+				}
+				// If partially onscreen, or not drawn, draw
+				if( this.offset > 0 && offheight < this.col.height ) {
+					// Fully on screen
+					if( this.drawn ) {
+						return;
+					}
+					this.drawn = true;
+				} else {
+					// Partially on screen
+					return;
+				}
+				
+				
+				//if( this.drawn ) {
+				//	return;
+				//}
+				//this.drawn = true;
+				ctx.drawImage(this.img, this.col.offset, this.offset, this.width, this.height);
+			};
+			
+			
+			
+			
+			var MCanvasColumn = function(main, index) {
+				this.main = main;
+				this.index = index;
+				this.imageIndex = 0;
+				this.images = [];
+				
+				this.resize();
+			};
+			
+			MCanvasColumn.prototype.resize = function() {
+				this.width = Math.floor(this.main.width / this.main.nColumns);
+				this.height = this.main.height;
+				this.offset = this.index * this.width;
+			};
+			
+			MCanvasColumn.prototype.needsImage = function() {
+				var offset = this.getEndOffset();
+				return offset <= this.main.visibleBottom;
+			}
+			
+			MCanvasColumn.prototype.getEndOffset = function() {
+				if( this.images.length <= 0 ) {
+					return this.main.visibleTop;
+				}
+				var lastImage = this.images[this.images.length - 1];
+				return lastImage.offset + lastImage.height;
+			};
+			
+			MCanvasColumn.prototype.addImage = function(img, extra) {
+				var offset = this.getEndOffset();
+				var i = this.imageIndex++;
+				var image = new MCanvasImage(this, img, extra, i);
+				this.images.push(image);
+				image.offset = offset;
+			};
+			
+			MCanvasColumn.prototype.draw = function() {
+				for( var i = 0; i < this.images.length; i++ ) {
+					this.images[i].draw();
+				}
+			};
+			
+			MCanvasColumn.prototype.transform = function() {
+				for( var i = 0; i < this.images.length; i++ ) {
+					this.images[i].offset -= this.main.deltaPixels;
+				}
+			};
+			
+			
+			
+			
+			
+			var MCanvasMain = function(options) {
+				this.$container = options.container;
+				this.generator = options.generator;
+				
+				// Speed should be in pixels/second
+				this.speed = (options && options.speed) || 100;
+				this.nColumns = (options && options.nColumns) || 6;
+				
+				// Make canvas
+				this.$canvas = $('<canvas>').appendTo(this.$container);
+				this.ctx = this.$canvas[0].getContext('2d');
+				this.resize();
+				this.currentTranslateY = 0;
+				
+				// Setup columns
+				this.columns = [];
+				for( var i = 0; i < this.nColumns; i++ ) {
+					this.columns[i] = new MCanvasColumn(this, i);
+				}
+			};
+			
+			MCanvasMain.prototype.resize = function() {
+				var cwidth = this.$container.width();
+				var cheight = this.$container.height();
+				var extendFactor = 2;
+				var clipFactor = 0.2;
+				var extendPx = Math.round(cheight * extendFactor);
+				var clipPx = Math.round(cheight * clipFactor);
+				
+				// Height should be 40% more than container
+				this.width = cwidth;
+				this.height = Math.round(cheight + (extendPx * 2));
+				
+				// Set the margin top to negative
+				this.marginTop = - extendPx;
+				
+				// Set the props
+				this.$canvas
+					.width(this.width)
+					.height(this.height)
+					.prop('width', this.width)
+					.prop('height', this.height)
+					.css('margin-top', this.marginTop + 'px');
+				
+				// Make visible area - go for about 20% for now
+				this.visibleTop = clipPx;
+				this.visibleBottom = this.height - clipPx;
+				
+				console.log(extendPx, clipPx, this.width, this.height, this.marginTop, this.visibleTop, this.visibleBottom);
+				// @todo resize columns
+			};
+			
+			MCanvasMain.prototype.loop = function() {
+				this.calcDelta();
+				this.fillColumns();
+				this.transform();
+				this.draw();
+			};
+			
+			MCanvasMain.prototype.calcDelta = function() {
+				// Delta time
+				var now = Date.now();
+				if( this.lastTs ) {
+					this.deltaTs = now - this.lastTs;
+				} else {
+					this.deltaTs = 0;
+				}
+				this.lastTs = now;
+				
+				// Delta pixels
+				this.deltaPixels = Math.round(this.deltaTs * this.speed / 1000);
+			}
+			
+			MCanvasMain.prototype.fillColumns = function() {
+				var i;
+				for( i = 0; i < this.nColumns; i++ ) {
+					var col = this.columns[i];
+					var img;
+					if( col.needsImage() ) {
+						img = this.generator.consume();
+						if( img ) {
+							col.addImage(img[0], img[1]);
+						}
+					}
+				}
+			};
+			
+			MCanvasMain.prototype.transform = function() {
+				// Shift entire canvas
+				this.ctx.save();
+				this.ctx.translate(0, -this.deltaPixels);
+				this.ctx.drawImage(this.$canvas[0], 0, 0);
+				this.ctx.restore();
+				
+				this.currentTranslateY += -this.deltaPixels;
+				
+				// Transform the models
+				for( var i = 0; i < this.nColumns; i++ ) {
+					this.columns[i].transform();
+					//this.columns[i].offset += this.deltaPixels
+				}
+			};
+			
+			MCanvasMain.prototype.draw = function() {
+				for( var i = 0; i < this.nColumns; i++ ) {
+					this.columns[i].draw();
+				}
+				
+				// Draw lines for the visible area (debug)
+				/*
+				var ctx = this.ctx;
+				ctx.beginPath();
+				ctx.moveTo(0, this.visibleTop);
+				ctx.lineTo(this.width, this.visibleTop);
+				ctx.lineWidth = 1;
+				ctx.strokeStyle = '#ff0000';
+				ctx.stroke();
+				
+				ctx.beginPath();
+				ctx.moveTo(0, this.visibleBottom);
+				ctx.lineTo(this.width, this.visibleBottom);
+				ctx.lineWidth = 1;
+				ctx.strokeStyle = '#ff0000';
+				ctx.stroke();
+				*/
+			};
+		</script>
+		
+		
+		<script type="text/javascript">
+			var generator;
+			var mainMs = 10;
+			var mainInterval;
+			var mCanvas;
+			
+			function mainLoop() {
+				mCanvas.loop();
+			}
+			
+			function start() {
+				if( mainInterval ) {
+					return;
+				}
+				mainInterval = setInterval(mainLoop, mainMs);
+			}
+			
+			function stop() {
+				if( !mainInterval ) {
+					return;
+				}
+				clearInterval(mainInterval);
+				mainInterval = undefined;
+			}
+			
+			function onReady() {
+				generator = new VidmeImageGenerator();
+				mCanvas = new MCanvasMain({
+					container : $('#container'),
+					generator : generator,
+					speed : 200
+				});
+				$(window).on('resize', function() {
+					mCanvas.resize();
+				});
+				/* setInterval(function() {
+					var images = generator.consume();
+					console.log(images, generator.images.length);
+				}, 500); */
+				start();
+				console.log('ok');
+			}
+			
+			$(onReady);
+		</script>
+	</head>
+	<body>
+		<div id="container">
+		
+		</div>
+	</body>
+</html>
