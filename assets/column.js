@@ -23,6 +23,7 @@
 	};
 
 	Column.prototype.resize = function(width, height) {
+		this.newHeightFactor = height / this.height;
 		this.width = width;
 		this.height = height;
 		this.offset = this.index * this.width;
@@ -148,7 +149,7 @@
 		for( var i = this.images.length - 1; i >= 0; i-- ) {
 			var image = this.images[i];
 			if( prevCursor === null ) {
-				prevCursor = image.nextCursor; // don't round this?
+				prevCursor = Math.round(image.nextCursor * this.newHeightFactor); // fear
 				prevCircCount = image.nextCircCount;
 			}
 			image.offset = this.offset;
