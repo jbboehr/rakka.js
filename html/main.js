@@ -61,6 +61,8 @@ requirejs([
 		$(window).on('resize', function() {
 			rakka.resize();
 		});
+		//rakka.start();
+		$('[data-action="start"]').trigger('click');
 	}
 	
 	function startSource(source) {
@@ -69,21 +71,30 @@ requirejs([
 				mirror: mirrorUrl
 			});
 		} else if( source == 'reddit' ) {
-			/*var*/ generator = new RakkaRedditGenerator({
-				mirror: mirrorUrl
-			});
+			$('.js-reddit-configure').removeClass('hide');
+			return true;
+			
 		} else {
 			return;
 		}
 		start(generator);
+		return true;
 	}
 	
 	function onReady() {
-		$(document).one('click', '.js-example-start', function() {
-			start();
+		$(document).one('click', '.js-reddit-configure .js-example-start', function() {
+			/*var*/ generator = new RakkaRedditGenerator({
+				mirror: mirrorUrl,
+				subreddit: $('#subreddit').val(),
+				sort: $('#reddit-sort').val() || 'new'
+			});
+			start(generator);
 		});
 		$(document).on('click', '.js-source-select', function(event) {
-			startSource($(event.target).attr('data-source'));
+			var el = $(event.target);
+			if( startSource(el.attr('data-source')) ) {
+				$('#selector').remove();
+			}
 		});
 	}
 	

@@ -23,9 +23,17 @@
 		this.init(options);
 		this.data = $.extend({}, defaultParams, options && options.data || {});
 		this.data.limit = this.batchSize;
+		
 		if( !this.url ) {
-			this.url = 'https://www.reddit.com/r/moescape/new.json';
+			var sort = options && options.sort || 'new';
+			this.data.t = (sort === 'top' ? 'all' : '');
+			if( options.subreddit ) {
+				this.url = 'https://www.reddit.com/r/' + options.subreddit + '/' + sort + '.json';
+			} else {
+				this.url = 'https://www.reddit.com/r/starshipporn/' + sort + '.json';
+			}
 		}
+		
 		this.useThumbnails = (options && options.useThumbnails);
 		this.maxVideoId = undefined;
 		this.lastRequestTs = 0;
@@ -41,10 +49,12 @@
 		
 		// Check time since last batch
 		// https://github.com/reddit/reddit/wiki/API#rules
-		if( Date.now() - this.lastRequestTs < 2000 ) {
+		var now = Date.now();
+		if( now - this.lastRequestTs < 2000 ) {
 			this.semaphore--;
 			return this;
 		}
+		this.lastRequestTs = now;
 		
 		if( this.nextAfter ) {
 			this.data.after = this.nextAfter;
