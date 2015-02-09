@@ -22,7 +22,9 @@ if( cluster.isMaster && true ) {
 	app.use(responseTime())
 	//app.use(bodyParser.urlencoded({ extended: false }));
 	app.use(mirrorImageMiddleware);
-	app.use(serveStatic('.', {'index': ['examples/index.html']}));
+	app.use(serveStatic('html', {'index': ['index.html']}));
+	app.use('/assets', serveStatic('assets'));
+	app.use('/node_modules', serveStatic('node_modules'));
 
 	http.createServer(app).listen(3000);
 }

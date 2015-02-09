@@ -1,7 +1,7 @@
 
 (function (factory) {
     if (typeof define === 'function' && define.amd) {
-        define([
+        define('rakka/rakka', [
 			'jquery',
 			'./column',
 			'./image'

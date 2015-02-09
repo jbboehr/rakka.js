@@ -4,16 +4,18 @@
         define([
 			'jquery',
 			'./ui-controlbar',
+			'./ui-list',
 			'./ui-stats'
 		], factory);
     } else {
         factory(
 			window.jQuery,
 			window.RakkaUIControlBar,
+			window.RakkaUIList,
 			window.RakkaUIStats
 		);
     }
-}(function($, RakkaUIControlBar, RakkaUIStats) {
+}(function($, RakkaUIControlBar, RakkaUIList, RakkaUIStats) {
 	
 	function RakkaUI(options) {
 		var subopts;
