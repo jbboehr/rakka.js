@@ -1,7 +1,7 @@
 
 (function (factory) {
     if (typeof define === 'function' && define.amd) {
-        define([
+        define('rakka/rakka', [
 			'jquery',
 			'./column',
 			'./image'
@@ -53,6 +53,13 @@
 		this.ctx = this.$canvas[0].getContext('2d');
 		this.circCtx = this.$circCanvas[0].getContext('2d');
 		
+		/*
+		this.circCtx.mozImageSmoothingEnabled = false;
+		this.circCtx.webkitImageSmoothingEnabled = false;
+		this.circCtx.msImageSmoothingEnabled = false;
+		this.circCtx.imageSmoothingEnabled = false;
+		*/
+		
 		// Setup vars
 		this.cursor = 0;
 		this.circCount = 0;
@@ -63,17 +70,14 @@
 		this.droppedFrames = 0;
 		this.imagesConsumed = 0;
 		
-		// Resize
-		this.resize();
-		
 		// Setup columns
-		var columnWidth = Math.floor(this.circWidth / this.nColumns);
 		this.columns = [];
 		for( var i = 0; i < this.nColumns; i++ ) {
-			var col = new Column(i, this.circCtx, this.consume, this.log);
-			col.resize(columnWidth, this.circHeight);
-			this.columns[i] = col;
+			this.columns[i] = new Column(i, this.circCtx, this.consume, this.log);
 		}
+		
+		// Resize
+		this.resize();
 	};
 	
 	
@@ -237,6 +241,11 @@
 	Rakka.prototype.resize = function() {
 		var width = this.$container.width();
 		var height = this.$container.height();
+		var newHeightFactor;
+		
+		if( this.height ) {
+			newHeightFactor = height / this.height;
+		}
 		
 		this.width = width;
 		this.height = height;
@@ -248,7 +257,8 @@
 		this.log('Canvas Dimensions', this.width, this.height);
 		
 		this.circWidth = this.width;
-		this.circHeight = this.height * 2;
+		// @todo maybe calculate this based on nColumns and expected image aspect ratio
+		this.circHeight = this.height * 4;
 		this.$circCanvas
 			.width(this.circWidth)
 			.height(this.circHeight)
@@ -256,11 +266,20 @@
 			.prop('height', this.circHeight);
 		this.log('Circular Buffer Dimensions', this.circWidth, this.circHeight);
 		
-		if( this.columns && this.columns.length ) {
-			var columnWidth = Math.floor(this.circWidth / this.nColumns);
-			for( var i = 0; i < this.columns.length; i++ ) {
-				this.columns[i].resize(columnWidth, this.circHeight);
-			}
+		// Calc column width
+		this.columnWidth = Math.floor(this.circWidth / this.nColumns);
+		
+		// Resize generator (for mirror)
+		this.generator.resize(this.columnWidth, this.height);
+		
+		// Adjust cursor
+		if( newHeightFactor ) {
+			this.cursor = Math.round(this.cursor * newHeightFactor);
+		}
+		
+		// Resize the columns
+		for( var i = 0; i < this.columns.length; i++ ) {
+			this.columns[i].resize(this.columnWidth, this.circHeight);
 		}
 	};
 	

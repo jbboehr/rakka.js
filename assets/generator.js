@@ -21,12 +21,19 @@
 	
 	Generator.prototype.init = function(options) {
 		this.url = (options && options.url) || undefined;
+		this.batchSize = (options && options.batchSize) || 25;
 		this.cacheSize = (options && options.cacheSize) || 100;
-		this.cacheBust = (options && options.cacheBust) || 1;
+		this.cacheBust = (options && options.cacheBust) || undefined;
+		this.mirror = (options && options.mirror);
 		this.images = [];
 		this.imageIndex = 0;
 		this.semaphore = 0;
 	};
+	
+	Generator.prototype.resize = function(columnWidth, columnHeight) {
+		this.columnWidth = columnWidth;
+		this.columnHeight = columnHeight;
+	}
 	
 	Generator.prototype.consume = function consume() {
 		if( this.images.length < this.cacheSize ) {
@@ -57,11 +64,20 @@
 			src += (src.indexOf('?') === -1 ? '?' : '&') + this.cacheBust;
 		}
 		
+		if( this.mirror ) {
+			src = this.mirror + (this.mirror.indexOf('?') === -1 ? '?' : '&') + 'url=' + encodeURIComponent(src);
+			if( this.columnWidth && this.columnHeight ) {
+				src += '&width=' + this.columnWidth;
+				src += '&height=' + this.columnHeight;
+				src += '&mode=inside';
+			}
+		}
+		
 		var img = new Image();
-		img.crossOrigin = "anonymous";
+		//img.crossOrigin = "anonymous";
 		img.onload = done;
 		img.onerror = done;
-		img.src = src
+		img.src = src;
 	};
 	
 	Generator.prototype.getBatch = function() {

@@ -18,7 +18,6 @@
 	var defaultParams = {
 		order : 'video_id',
 		direction : 'DESC',
-		limit : 100,
 		//maxVideoId : maxVideoId,
 		moderated : 1,
 		nsfw: 0,
@@ -28,10 +27,12 @@
 	var VidmeGenerator = function(options) {
 		this.init(options);
 		this.data = $.extend({}, defaultParams, options && options.data || {});
+		this.data.limit = this.batchSize;
 		if( !this.url ) {
 			this.url = 'https://api.vid.me/videos/list';
 		}
 		this.maxVideoId = undefined;
+		this.cacheBust = 1;
 	};
 	
 	VidmeGenerator.prototype = new Generator();

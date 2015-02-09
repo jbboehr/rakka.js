@@ -18,6 +18,12 @@
 		this.$element = $('<div>').addClass('rakka-ui-component rakka-ui-stats')
 			.appendTo(this.$container);
 		
+		this.$imagesLoading = $('<div>')
+			.text('Images loading: ')
+			.append('<span class="val">')
+			.appendTo(this.$element)
+			.find('span');
+		
 		this.$imagesPreloaded = $('<div>')
 			.text('Images in preload cache: ')
 			.append('<span class="val">')
@@ -48,16 +54,25 @@
 			.appendTo(this.$element)
 			.find('span');
 		
+		this.$dims = $('<div>')
+			.text('Canvas/Buffer Size: ')
+			.append('<span class="val">')
+			.appendTo(this.$element)
+			.find('span');
+		
 		// Start interval
 		this.start();
 	};
 	
 	RakkaUIStats.prototype.loop = function() {
+		this.$imagesLoading.text(this.rakka.generator.semaphore);
 		this.$imagesPreloaded.text(this.rakka.generator.count());
 		this.$imagesConsumed.text(this.rakka.imagesConsumed);
 		this.$delay.text(this.rakka.delay);
 		this.$speed.text(this.rakka._speed);
 		this.$dropped.text(Math.round(this.rakka.droppedFrames));
+		this.$dims.text(this.rakka.$canvas.width() + 'x' + this.rakka.$canvas.height() + ' / ' +
+						this.rakka.$circCanvas.width() + 'x' + this.rakka.$circCanvas.height());
 	}
 	
 	RakkaUIStats.prototype.start = function() {

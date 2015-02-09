@@ -59,6 +59,16 @@
 			.text('Hide controls')
 			.on('click', this.onAutoHideClick.bind(this))
 			.appendTo(this.$element);
+			
+		this.$theme = $('<select>')
+			.attr('class', 'form-control')
+			.attr('data-action', 'change-theme')
+			.append('<option value=""></option>')
+			.append('<option value="light">Light</option>')
+			.append('<option value="dark">Dark</option>')
+			.on('change', this.onThemeChange.bind(this))
+			.val('' + options.theme)
+			.appendTo(this.$element);
 		
 		
 		// @todo dispose
@@ -118,6 +128,7 @@
 	};
 	
 	RakkaUIControlBar.prototype.onFullscreenClick = function(event) {
+		/*
 		var elem = this.$container[0];
 		if( elem.requestFullscreen ) {
 			elem.requestFullscreen();
@@ -130,6 +141,8 @@
 		} else {
 			// Not supported
 		}
+		*/
+		toggleFullScreen();
 	};
 	
 	RakkaUIControlBar.prototype.onSpeedChange = function(event) {
@@ -148,8 +161,37 @@
 		}
 	};
 	
+	RakkaUIControlBar.prototype.onThemeChange = function(event) {
+		this.$container.trigger('themeChange', $(event.target).val());
+	};
+	
+	
 	RakkaUIControlBar.prototype.userActive = function(state) {};
 	
+	function toggleFullScreen() {
+	  if (!document.fullscreenElement &&    // alternative standard method
+		  !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement ) {  // current working methods
+		if (document.documentElement.requestFullscreen) {
+		  document.documentElement.requestFullscreen();
+		} else if (document.documentElement.msRequestFullscreen) {
+		  document.documentElement.msRequestFullscreen();
+		} else if (document.documentElement.mozRequestFullScreen) {
+		  document.documentElement.mozRequestFullScreen();
+		} else if (document.documentElement.webkitRequestFullscreen) {
+		  document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+		}
+	  } else {
+		if (document.exitFullscreen) {
+		  document.exitFullscreen();
+		} else if (document.msExitFullscreen) {
+		  document.msExitFullscreen();
+		} else if (document.mozCancelFullScreen) {
+		  document.mozCancelFullScreen();
+		} else if (document.webkitExitFullscreen) {
+		  document.webkitExitFullscreen();
+		}
+	  }
+	}
 	
 	// Exports
 	window.RakkaUIControlBar = RakkaUIControlBar;
