@@ -241,6 +241,11 @@
 	Rakka.prototype.resize = function() {
 		var width = this.$container.width();
 		var height = this.$container.height();
+		var newHeightFactor;
+		
+		if( this.height ) {
+			newHeightFactor = height / this.height;
+		}
 		
 		this.width = width;
 		this.height = height;
@@ -266,6 +271,11 @@
 		
 		// Resize generator (for mirror)
 		this.generator.resize(this.columnWidth, this.height);
+		
+		// Adjust cursor
+		if( newHeightFactor ) {
+			this.cursor = Math.round(this.cursor * newHeightFactor);
+		}
 		
 		// Resize the columns
 		for( var i = 0; i < this.columns.length; i++ ) {

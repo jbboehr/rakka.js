@@ -18,6 +18,12 @@
 		this.$element = $('<div>').addClass('rakka-ui-component rakka-ui-stats')
 			.appendTo(this.$container);
 		
+		this.$imagesLoading = $('<div>')
+			.text('Images loading: ')
+			.append('<span class="val">')
+			.appendTo(this.$element)
+			.find('span');
+		
 		this.$imagesPreloaded = $('<div>')
 			.text('Images in preload cache: ')
 			.append('<span class="val">')
@@ -59,6 +65,7 @@
 	};
 	
 	RakkaUIStats.prototype.loop = function() {
+		this.$imagesLoading.text(this.rakka.generator.semaphore);
 		this.$imagesPreloaded.text(this.rakka.generator.count());
 		this.$imagesConsumed.text(this.rakka.imagesConsumed);
 		this.$delay.text(this.rakka.delay);

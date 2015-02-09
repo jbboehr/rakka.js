@@ -1,9 +1,39 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<title></title>
+		
+		<link rel="stylesheet" type="text/css" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="../assets/ui.css">
+		<link rel="stylesheet" type="text/css" href="./main.css">
+		
+		<script type="text/javascript" src="../node_modules/requirejs/require.js" data-main="main"></script>
 	</head>
 	<body>
-		<a href="./vidme.html">vidme</a>
-		<a href="./reddit.html">reddit</a>
+		<div id="selector">
+			<a class="js-source-select" data-source="vidme">vidme</a>
+			<a class="js-source-select" data-source="reddit">reddit</a>
+		</div>
+		
+		<div id="container" class="hide"></div>
+		
+		<div class="static-modal-wrapper hide">
+			<div class="modal">
+				<div class="modal-dialog">
+					<div class="modal-content">
+					  <div class="modal-header">
+						<h4 class="modal-title">Modal title</h4>
+					  </div>
+					  <div class="modal-body">
+						<p>One fine body&hellip;</p>
+					  </div>
+					  <div class="modal-footer">
+						<button type="button" class="btn btn-primary js-example-start">Start</button>
+					  </div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</body>
 </html>

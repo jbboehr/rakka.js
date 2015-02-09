@@ -23,7 +23,6 @@
 	};
 
 	Column.prototype.resize = function(width, height) {
-		this.lastDeltaHeight = (this.height ? this.lastDeltaHeight = height - this.height : 0);
 		this.width = width;
 		this.height = height;
 		this.offset = this.index * this.width;
@@ -69,11 +68,9 @@
 			// Draw the image to the buffer
 			var newNextCursor = this.nextCursor + image.height;
 			var newNextCircCount = this.nextCircCount;
-			var needsSplit = false;
 			if( newNextCursor > this.height ) {
 				newNextCircCount++;
 				newNextCursor -= this.height;
-				needsSplit = true;
 			}
 			
 			// Add to the image stack and set the cursor/circ/fresh
@@ -145,18 +142,30 @@
 	};
 	
 	Column.prototype.redraw = function() {
-		// @todo finish this
-		/*
-		// Need to redraw all images in the buffer back from the cursor,
-		// but make sure not to go back too much
+		// Need to redraw all images in the buffer
+		var prevCursor = null;
+		var prevCircCount = null;
 		for( var i = this.images.length - 1; i >= 0; i-- ) {
 			var image = this.images[i];
-			if( image.cursor > this.height || image.nextCursor > this.height ) {
-				continue;
+			if( prevCursor === null ) {
+				prevCursor = image.nextCursor; // don't round this?
+				prevCircCount = image.nextCircCount;
+			}
+			image.offset = this.offset;
+			// Pacth the image next cursor
+			image.nextCursor = prevCursor;
+			image.nextCircCount = prevCircCount;
+			// Patch the image cursor
+			image.cursor = image.nextCursor - image.height;
+			image.circCount = image.nextCircCount;
+			if( image.cursor < 0 ) {
+				image.cursor += this.height;
+				image.circCount--;
 			}
 			this.drawImage(image);
+			prevCursor = image.cursor;
+			prevCircCount = image.circCount;
 		}
-		*/
 	};
 	
 	

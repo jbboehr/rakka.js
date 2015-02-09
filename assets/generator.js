@@ -21,6 +21,7 @@
 	
 	Generator.prototype.init = function(options) {
 		this.url = (options && options.url) || undefined;
+		this.batchSize = (options && options.batchSize) || 25;
 		this.cacheSize = (options && options.cacheSize) || 100;
 		this.cacheBust = (options && options.cacheBust) || undefined;
 		this.mirror = (options && options.mirror);

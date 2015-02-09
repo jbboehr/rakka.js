@@ -22,6 +22,7 @@
 	var RedditGenerator = function(options) {
 		this.init(options);
 		this.data = $.extend({}, defaultParams, options && options.data || {});
+		this.data.limit = this.batchSize;
 		if( !this.url ) {
 			this.url = 'https://www.reddit.com/r/moescape/new.json';
 		}
