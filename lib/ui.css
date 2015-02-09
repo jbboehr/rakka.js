@@ -26,6 +26,22 @@
 	opacity: 1;
 }
 
+.rakka-container.rakka-theme-light {
+	background-color: #fff;
+}
+
+.rakka-container.rakka-theme-dark {
+	background-color: #222;
+}
+
+.rakka-ui-component {
+	color: #666;
+}
+
+.rakka-theme-dark .rakka-ui-component {
+	color: #bbb;
+}
+
 
 
 
@@ -42,6 +58,11 @@
 	z-index: 10;
 }
 
+.rakka-theme-dark .rakka-ui-controlbar {
+	background-color: rgba(68, 68, 68, 0.75);
+	border-color: #080808;
+}
+
 .rakka-ui-controlbar > * {
 	display: inline-block;
 	vertical-align: middle;
@@ -51,6 +72,11 @@
 .rakka-ui-controlbar > input[type="range"] {
 	max-width: 25%;
 	display: inline-block;
+}
+
+.rakka-ui-controlbar > select {
+	width: auto;
+	float: right;
 }
 
 .rakka-ui-controlbar button[data-action="auto-hide"] {
@@ -73,17 +99,16 @@
 	border-left: 0;
 	border-bottom: 0;
 	background-color: rgba(255, 255, 255, 0.7);
-	
-	/*
-	min-width: 8em;
-	min-height: 8em;
-	*/
+}
+
+.rakka-theme-dark .rakka-ui-stats {
+	background-color: rgba(68, 68, 68, 0.75);
+	border-color: #080808;
 }
 
 .rakka-ui-stats > * {
 	margin-left: 1em;
 	margin-right: 1em;
-	color: #666;
 	font-size: 1.2em;
 }
 
@@ -99,12 +124,11 @@
 	border-right: 0;
 	border-bottom: 0;
 	background-color: rgba(255, 255, 255, 0.7);
-	
-	/*
-	padding: 5px;
-	min-width: 8em;
-	min-height: 8em;
-	*/
+}
+
+.rakka-theme-dark .rakka-ui-list {
+	background-color: rgba(68, 68, 68, 0.75);
+	border-color: #080808;
 }
 
 .rakka-ui-list > ul {
@@ -119,7 +143,10 @@
 }
 
 .rakka-ui-list > ul > li > a {
-	color: #666;
 	font-size: 1.2em;
+	color: #666;
 }
 
+.rakka-theme-dark .rakka-ui-list > ul > li > a {
+	color: #bbb;
+}

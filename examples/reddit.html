@@ -34,10 +34,33 @@
 				padding: 0;
 				border: 0;
 			}
+			body {
+				background-color: #222;
+			}
+			.static-modal-wrapper {
+				display: table;
+				width: 100%;
+				height: 100%;
+				background-color: #222;
+			}
+			.static-modal-wrapper .modal {
+				position: relative;
+				top: auto;
+				right: auto;
+				bottom: auto;
+				left: auto;
+				z-index: 1;
+				/* display: block; */
+				display: table-cell;
+				vertical-align: middle;
+			}
 		</style>
 		
 		<script type="text/javascript">
-			function onReady() {
+			function start() {
+				$('.static-modal-wrapper').remove();
+				$('#container').removeClass('hide');
+				
 				/*var*/ generator = new RakkaRedditGenerator({
 					//mirror: 'http://localhost:3000/mirror'
 				});
@@ -53,18 +76,43 @@
 					container: $('body'),
 					controlBar: true,
 					list: true,
-					stats: true
+					stats: true,
+					theme: 'dark'
 				});
 				$(window).on('resize', function() {
 					rakka.resize();
 				});
 			}
 			
+			function onReady() {
+				//$(document).one('click', '.js-example-start', function() {
+					start();
+				//});
+			}
+			
 			$(onReady);
 		</script>
 	</head>
 	<body>
-		<div id="container"></div>
+		<div id="container" class="hide"></div>
+		
+		<div class="static-modal-wrapper">
+			<div class="modal">
+				<div class="modal-dialog">
+					<div class="modal-content">
+					  <div class="modal-header">
+						<h4 class="modal-title">Modal title</h4>
+					  </div>
+					  <div class="modal-body">
+						<p>One fine body&hellip;</p>
+					  </div>
+					  <div class="modal-footer">
+						<button type="button" class="btn btn-primary js-example-start">Start</button>
+					  </div>
+					</div><!-- /.modal-content -->
+				</div><!-- /.modal-dialog -->
+			</div><!-- /.modal -->
+		</div>
 	</body>
 </html>
 </html>
