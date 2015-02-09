@@ -49,7 +49,7 @@
 			.prop('min', 50)
 			.prop('max', 2000)
 			.val(this.rakka.speed())
-			.on('change', this.onSpeedChange.bind(this))
+			.on('input', this.onSpeedChange.bind(this))
 			.appendTo(this.$element);
 		
 		this.$autoHide = $('<button>')
