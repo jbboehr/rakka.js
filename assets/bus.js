@@ -50,7 +50,7 @@
 		return this;
 	};
 	
-	Bus.prototype.trigger = function(name, args, async) {
+	Bus.prototype.triggerSync = function(name, args, async) {
 		var cb, i, ev;
 		
 		if( !(name in this._events) ) {
@@ -84,6 +84,13 @@
 		}
 		
 		return this;
+	};
+	
+	Bus.prototype.trigger = function(name, args, async) {
+		var self = this;
+		setTimeout(function() {
+			self.triggerSync(name, args, true);
+		}, 0);
 	};
 	
 	Bus.prototype.proxy = function(object) {

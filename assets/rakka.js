@@ -162,26 +162,13 @@
 		if( this._direction === -1 ) {
 			return;
 		}
-		var images = [];
-		var gcImages = [];
 		for( var i = 0, l = this.columns.length; i < l ; i++ ) {
 			var col = this.columns[i];
 			var newImages = col.fill(this.cursor, this.circCount);
 			if( newImages === false ) {
 				this.incrCursorOkay = false;
-			} else if( newImages instanceof Array ) {
-				images = images.concat(newImages);
 			}
-			var newGcImages = col.gc();
-			if( newGcImages instanceof Array ) {
-				gcImages = gcImages.concat(newGcImages);
-			}
-		}
-		if( images.length || gcImages.length ) {
-			this.trigger('fill', {
-				images : images,
-				gcImages : gcImages
-			});
+			col.gc();
 		}
 	};
 	

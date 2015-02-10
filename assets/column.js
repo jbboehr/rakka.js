@@ -8,11 +8,14 @@
 }(function($) {
 
 	var Column = function(options) {
-		this.bus = options.bus;
 		this.ctx = options.ctx;
 		this.consume = (options && options.consume);
 		this.index = (options && options.index);
 		this.log = (options && options.log);
+		
+		// Setup bus
+		this.bus = options.bus;
+		this.bus.proxy(this);
 		
 		this.images = [];
 		
@@ -43,7 +46,6 @@
 	};
 
 	Column.prototype.fill = function(cursor, circCount, direction) {
-		var newImages = [];
 		var ctx = this.ctx;
 		do {
 			// Preload an image if we don't already have one
@@ -84,7 +86,8 @@
 			image.columnIndex = this.index;
 			image.fresh = true;
 			this.images.push(image);
-			newImages.push(image);
+			
+			this.trigger('rakka.image.new', image);
 			
 			// Draw
 			this.drawImage(image);
@@ -95,22 +98,24 @@
 			this.nextImage = undefined;
 		} while(1);
 		
-		return newImages;
+		return true;
 	};
 	
 	Column.prototype.gc = function() {
 		// Garbage collect the images
-		var gcImages = [];
+		var gced = false;
 		while( this.images.length ) {
 			var i = this.images[0];
 			var d = this.nextCircCount - i.circCount;
 			if( d >= 2 || (d === 1 && i.cursor < this.nextCursor) ) {
-				gcImages.push(this.images.shift());
+				gced = true;
+				this.trigger('rakka.image.gc', i);
+				this.images.shift();
 			} else {
 				break;
 			}
 		}
-		return gcImages;
+		return gced;
 	};
 	
 	Column.prototype.drawImage = function(image) {
