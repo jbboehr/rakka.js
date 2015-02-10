@@ -155,20 +155,43 @@
 	};
 	
 	RakkaUIControlBar.prototype.onKeyDown = function(event) {
+		var isControl = (event.ctrlKey || event.altKey) && !event.shiftKey;
+		
+		if( event.keyCode === 32 ) { // space
+			return this.trigger('rakka.toggle');
+		} else if( !isControl ) {
+			return;
+		}
+		
+		event.preventDefault();
 		switch( event.keyCode ) {
+			case 13: // enter
+				this.onFullscreenClick(event);
+				break;
 			case 32: // space
 				this.trigger('rakka.toggle');
 				break;
-			case 70: // f
-				this.onFullscreenClick(event);
-				break;
 			case 72: // h
 				this.onAutoHideClick(event);
+				break;
+			case 80: // p
+				this.trigger('rakka.toggle');
+				break;
+			case 82: // r
+				this.trigger('rakka.direction.toggle');
 				break;
 			case 88: // x
 				this.speedWithFactor(50);
 				break;
 			case 90: // z
+				this.speedWithFactor(-50);
+				break;
+			case 187: // + (=)
+				event.preventDefault();
+				this.speedWithFactor(-50);
+				break;
+			case 189: // -
+				event.preventDefault();
 				this.speedWithFactor(-50);
 				break;
 		}
