@@ -21,6 +21,9 @@
 		var subopts;
 		var theme;
 		
+		// Setup events
+		this.bus = options.bus;
+		
 		// Setup main options
 		if( options && -1 !== ['none', 'light', 'dark'].indexOf(options.theme) ) {
 			this.theme = options.theme;
@@ -37,6 +40,7 @@
 		
 		function makeOpts(opts) {
 			return $.extend({
+				bus: options.bus,
 				rakka: options.rakka,
 				container: options.container,
 				theme: options.theme
@@ -127,15 +131,7 @@
 		}
 		
 		// Propogate
-		if( this.controlBar ) {
-			this.controlBar.userActive(state);
-		}
-		if( this.list ) {
-			this.list.userActive(state);
-		}
-		if( this.stats ) {
-			this.stats.userActive(state);
-		}
+		this.bus.trigger('rakka.ui.userActive', state);
 	};
 	
 	

@@ -12,32 +12,43 @@
 }(function($) {
 	
 	function RakkaUIControlBar(options) {
-		this.rakka = options.rakka;
 		this.$container = options.container;
+		this.theme = options.theme;
+		
+		// Setup bus
+		this.bus = options.bus;
+		this.bus.proxy(this);
+		
+		// Setup elements
+		this.render();
+		
+		// Bind events
+		this.bind();
+		
+		// Cough
+		this.trigger('rakka.speed.emit');
+	};
 	
+	RakkaUIControlBar.prototype.render = function() {
 		this.$element = $('<div>').addClass('rakka-ui-component rakka-ui-controlbar user-active force-show')
 			.appendTo(this.$container);
 		
 		this.$toggle = $('<button>')
 			.attr('class', 'btn btn-success')
-			.attr('data-action', 'start')
+			.attr('data-action', 'toggle')
 			.text('Start')
-			.on('click', this.onToggleClick.bind(this))
 			.appendTo(this.$element);
 		
 		this.$reverse = $('<button>')
-			.attr('class', 'btn btn-warning') // disabled
+			.attr('class', 'btn btn-warning')
 			.attr('data-action', 'reverse')
-			//.prop('disabled', true)
 			.text('Reverse')
-			.on('click', this.onReverseClick.bind(this))
 			.appendTo(this.$element);
 		
 		this.$fullscreen = $('<button>')
 			.attr('class', 'btn btn-info')
 			.attr('data-action', 'fullscreen')
 			.text('Fullscreen')
-			.on('click', this.onFullscreenClick.bind(this))
 			.appendTo(this.$element);
 		
 		if( !this.isFullscreenSupported(this.$container[0]) ) {
@@ -48,7 +59,6 @@
 		this.$speed = $('<input type="range">')
 			.prop('min', 50)
 			.prop('max', 2000)
-			.val(this.rakka.speed())
 			.on('input', this.onSpeedChange.bind(this))
 			.appendTo(this.$element);
 		
@@ -67,14 +77,25 @@
 			.append('<option value="light">Light</option>')
 			.append('<option value="dark">Dark</option>')
 			.on('change', this.onThemeChange.bind(this))
-			.val('' + options.theme)
+			.val('' + this.theme)
 			.appendTo(this.$element);
+	};
+	
+	RakkaUIControlBar.prototype.bind = function() {
+		// Bus events
+		this.on('rakka.direction.changed', this.onRakkaDirectionChanged.bind(this));
+		this.on('rakka.started', this.onRakkaStarted.bind(this));
+		this.on('rakka.stopped', this.onRakkaStopped.bind(this));
+		this.on('rakka.reverse.ended', this.onRakkaReverseEnded.bind(this));
+		this.on('rakka.speed.changed', this.onRakkaSpeedChanged.bind(this));
 		
-		// Keyboard shortcuts
+		// DOM events
+		this.$element.on('click', '[data-action="toggle"]', this.trigger.bind(null, 'rakka.toggle'));
+		this.$element.on('click', '[data-action="reverse"]', this.trigger.bind(null, 'rakka.direction.toggle'));
+		this.$element.on('click', '[data-action="fullscreen"]', this.onFullscreenClick.bind(this));
+		
+		// Keyboard shortcut events
 		$(window).on('keydown', this.onKeyDown.bind(this));
-		
-		// Revers
-		this.rakka.on('reverseEnd', this.onReverseEnd.bind(this));
 	};
 	
 	RakkaUIControlBar.prototype.isFullscreenSupported = function(elem) {
@@ -82,6 +103,52 @@
 				elem.msRequestFullscreen ||
 				elem.mozRequestFullScreen ||
 				elem.webkitRequestFullscreen ? true : false);
+	};
+	
+	RakkaUIControlBar.prototype.onRakkaDirectionChanged = function(direction) {
+		console.log(direction, arguments);
+		if( direction === -1 ) {
+			this.$reverse.text('Forward');
+		} else {
+			this.$reverse.text('Reverse');
+		}
+	};
+	
+	RakkaUIControlBar.prototype.onRakkaStarted = function() {
+		this.$toggle
+			.text('Stop')
+			.removeClass('btn-success')
+			.addClass('btn-danger');
+		this.$reverse.prop('disabled', false).removeClass('disabled');
+	};
+	
+	RakkaUIControlBar.prototype.onRakkaStopped = function() {
+		this.$toggle
+			.text('Start')
+			.removeClass('btn-danger')
+			.addClass('btn-success');
+	};
+	
+	RakkaUIControlBar.prototype.onRakkaReverseEnded = function() {
+		this.onReverseClick('forward');
+		this.trigger('rakka.stop');
+		this.$reverse.prop('disabled', true).addClass('disabled');
+	};
+	
+	RakkaUIControlBar.prototype.onRakkaSpeedChanged = function(speed) {
+		if( !this.noSpeedUI ) {
+			this.$speed.val(speed);
+		}
+	};
+	
+	RakkaUIControlBar.prototype.onSpeedChange = function(event) {
+		this.trigger('rakka.speed.change', this.$speed.val());
+		
+		// Make sure no loop
+		this.noSpeedUI = true;
+		setTimeout(function() {
+			this.noSpeedUi = false;
+		}.bind(this), 25);
 	};
 	
 	RakkaUIControlBar.prototype.onKeyDown = function(event) {
@@ -110,62 +177,8 @@
 		}
 	};
 	
-	RakkaUIControlBar.prototype.onToggleClick = function(event) {
-		var action = typeof arg === 'string' ? arg : this.$toggle.attr('data-action');
-		if( action === 'start' ) {
-			this.rakka.start();
-			this.$toggle.attr('data-action', 'stop')
-				.text('Stop')
-				.removeClass('btn-success')
-				.addClass('btn-danger');
-			this.$reverse.prop('disabled', false).removeClass('disabled');
-		} else if( action === 'stop' ) {
-			this.rakka.stop();
-			this.$toggle.attr('data-action', 'start')
-				.text('Start')
-				.removeClass('btn-danger')
-				.addClass('btn-success');
-		}
-	};
-	
-	RakkaUIControlBar.prototype.onReverseClick = function(arg) {
-		var action = typeof arg === 'string' ? arg : this.$reverse.attr('data-action');
-		if( action === 'reverse' ) {
-			this.rakka.direction(-1);
-			this.$reverse.attr('data-action', 'forward').text('Forward');
-		} else if( action === 'forward' ) {
-			this.rakka.direction(1);
-			this.$reverse.attr('data-action', 'reverse').text('Reverse');
-		}
-	};
-	
-	RakkaUIControlBar.prototype.onReverseEnd = function(event) {
-		this.onReverseClick('forward');
-		this.onToggleClick('stop');
-		this.$reverse.prop('disabled', true).addClass('disabled');
-	};
-	
-	
 	RakkaUIControlBar.prototype.onFullscreenClick = function(event) {
-		/*
-		var elem = this.$container[0];
-		if( elem.requestFullscreen ) {
-			elem.requestFullscreen();
-		} else if( elem.msRequestFullscreen ) {
-			elem.msRequestFullscreen();
-		} else if( elem.mozRequestFullScreen ) {
-			elem.mozRequestFullScreen();
-		} else if( elem.webkitRequestFullscreen ) {
-			elem.webkitRequestFullscreen();
-		} else {
-			// Not supported
-		}
-		*/
 		toggleFullScreen();
-	};
-	
-	RakkaUIControlBar.prototype.onSpeedChange = function(event) {
-		this.rakka.speed(this.$speed.val());
 	};
 	
 	RakkaUIControlBar.prototype.onAutoHideClick = function(event) {
@@ -185,7 +198,6 @@
 	};
 	
 	
-	RakkaUIControlBar.prototype.userActive = function(state) {};
 	
 	function toggleFullScreen() {
 	  if (!document.fullscreenElement &&    // alternative standard method
@@ -211,6 +223,8 @@
 		}
 	  }
 	}
+	
+	
 	
 	// Exports
 	window.RakkaUIControlBar = RakkaUIControlBar;

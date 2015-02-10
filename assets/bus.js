@@ -50,11 +50,15 @@
 		return this;
 	};
 	
-	Bus.prototype.trigger = function(name, payload, async) {
+	Bus.prototype.trigger = function(name, args, async) {
 		var cb, i, ev;
 		
 		if( !(name in this._events) ) {
 			return this;
+		}
+		
+		if( !(args instanceof Array) ) {
+			args = [args];
 		}
 		
 		i = this._events[name].length;
@@ -62,13 +66,15 @@
 			ev = this._events[name][i];
 			cb = ev.cb;
 			
+			//console.log(name, i, cb, args);
+			
 			// Run the callback
 			if( async || ev.async ) {
 				setTimeout(function() {
-					cb(payload, this);
+					cb.apply(null, args);
 				}, 0);
 			} else {
-				cb(payload, this);
+				cb.apply(null, args);
 			}
 			
 			// Remove if once

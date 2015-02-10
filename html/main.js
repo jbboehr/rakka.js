@@ -56,6 +56,7 @@ requirejs([
 			debug : false
 		});
 		/* ui */ ui = new RakkaUI({
+			bus: rakka.bus,
 			rakka: rakka,
 			container: $('body'),
 			controlBar: true,
@@ -66,8 +67,7 @@ requirejs([
 		$(window).on('resize', function() {
 			rakka.resize();
 		});
-		//rakka.start();
-		$('[data-action="start"]').trigger('click');
+		rakka.start();
 	}
 	
 	function startSource(source) {

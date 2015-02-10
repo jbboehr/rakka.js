@@ -73,7 +73,7 @@
 		}
 	};
 	
-	RakkaUIList.prototype.userActive = function(state) {};
+	
 	
 	// Exports
 	window.RakkaUIList = RakkaUIList;

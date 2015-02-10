@@ -12,9 +12,28 @@
 }(function($) {
 	
 	function RakkaUIStats(options) {
-		this.rakka = options.rakka;
 		this.$container = options.container;
 		
+		// Setup bus
+		this.bus = options.bus;
+		this.bus.proxy(this);
+		
+		// Render
+		this.render();
+		
+		// Bind events
+		this.bind();
+		
+		// Start loop
+		this.start();
+		this.loop();
+	}
+	
+	RakkaUIStats.prototype.bind = function() {
+		this.on('rakka.stats', this.onStats.bind(this));
+	};
+	
+	RakkaUIStats.prototype.render = function() {
 		this.$element = $('<div>').addClass('rakka-ui-component rakka-ui-stats')
 			.appendTo(this.$container);
 		
@@ -59,27 +78,29 @@
 			.append('<span class="val">')
 			.appendTo(this.$element)
 			.find('span');
-		
-		// Start interval
-		this.start();
 	};
 	
 	RakkaUIStats.prototype.loop = function() {
-		this.$imagesLoading.text(this.rakka.generator.semaphore);
-		this.$imagesPreloaded.text(this.rakka.generator.count());
-		this.$imagesConsumed.text(this.rakka.imagesConsumed);
-		this.$delay.text(this.rakka.delay);
-		this.$speed.text(this.rakka._speed);
-		this.$dropped.text(Math.round(this.rakka.droppedFrames));
-		this.$dims.text(this.rakka.$canvas.width() + 'x' + this.rakka.$canvas.height() + ' / ' +
-						this.rakka.$circCanvas.width() + 'x' + this.rakka.$circCanvas.height());
-	}
+		this.trigger('rakka.stats.emit');
+	};
+	
+	RakkaUIStats.prototype.onStats = function(stats) {
+		this.$imagesLoading.text(stats.imagesLoading);
+		this.$imagesPreloaded.text(stats.imagesPreloaded);
+		this.$imagesConsumed.text(stats.imagesConsumed);
+		this.$delay.text(stats.delay);
+		this.$speed.text(stats.speed);
+		this.$dropped.text(stats.droppedFrames);
+		this.$dims.text(stats.canvasWidth + 'x' + stats.canvasHeight  + ' / ' +
+						stats.circCanvasWidth + 'x' + stats.circCanvasHeight);
+	};
+	
 	
 	RakkaUIStats.prototype.start = function() {
 		if( this._interval ) {
 			return;
 		}
-		this._interval = setInterval(this.loop.bind(this), 250);
+		this._interval = setInterval(this.loop.bind(this), 500);
 	};
 	
 	RakkaUIStats.prototype.stop = function() {
@@ -88,10 +109,6 @@
 		}
 		clearInterval(this._interval);
 		this._interval = null;
-	};
-	
-	RakkaUIStats.prototype.userActive = function(state) {
-		this._userActive = state;
 	};
 	
 	

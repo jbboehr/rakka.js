@@ -7,19 +7,21 @@
     }
 }(function($) {
 
-	var Column = function(index, ctx, consume, log) {
-		this.index = index;
-		this.ctx = ctx;
-		this.consume = consume;
-		this.log = log;
+	var Column = function(options) {
+		this.bus = options.bus;
+		this.ctx = options.ctx;
+		this.consume = (options && options.consume);
+		this.index = (options && options.index);
+		this.log = (options && options.log);
+		
 		this.images = [];
 		
 		this.nextCursor = 0;
 		this.nextCircCount = 0;
 		
-		/*if( width && height ) {
-			this.resize(width, height);
-		}*/
+		if( options.width && options.height ) {
+			this.resize(options.width, options.height);
+		}
 	};
 
 	Column.prototype.resize = function(width, height) {

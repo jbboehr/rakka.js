@@ -32,6 +32,7 @@
 		// Setup event bus
 		this.bus = (options && options.bus) || new Bus();
 		this.bus.proxy(this);
+		this.bind();
 		
 		// Setup generator
 		this.generator = options.generator;
@@ -83,13 +84,48 @@
 		// Setup columns
 		this.columns = [];
 		for( var i = 0; i < this.nColumns; i++ ) {
-			this.columns[i] = new Column(i, this.circCtx, this.consume, this.log);
+			this.columns[i] = new Column({
+				bus : this.bus,
+				ctx : this.circCtx,
+				consume : this.consume,
+				index : i,
+				log : this.log
+			});
 		}
 		
 		// Resize
 		this.resize();
 	};
 	
+	Rakka.prototype.bind = function() {
+		var self = this;
+		
+		this.on('rakka.start', this.start.bind(this));
+		this.on('rakka.stop', this.stop.bind(this));
+		this.on('rakka.toggle', this.toggle.bind(this));
+		this.on('rakka.direction.change', this.direction.bind(this));
+		this.on('rakka.direction.toggle', this.directionToggle.bind(this));
+		this.on('rakka.speed.change', this.speed.bind(this));
+		
+		this.on('rakka.speed.emit', function() {
+			self.trigger('rakka.speed.changed', self._speed);
+		});
+		this.on('rakka.stats.emit', function() {
+			var stats = {
+				imagesLoading : self.generator.semaphore,
+				imagesPreloaded : self.generator.count(),
+				imagesConsumed : self.imagesConsumed,
+				delay : self.delay,
+				speed : self._speed,
+				droppedFrames : Math.round(self.droppedFrames),
+				canvasWidth : self.$canvas.width(),
+				canvasHeight : self.$canvas.height(),
+				circCanvasWidth : self.$circCanvas.width(),
+				circCanvasHeight : self.$circCanvas.height(),
+			};
+			self.trigger('rakka.stats', stats);
+		});
+	};
 	
 	
 	// Loop
@@ -192,7 +228,7 @@
 		if( this._direction === -1 ) {
 			var d = this.maxCircCount - this.circCount;
 			if( d >= 2 ||  (d === 1 && this.cursor < this.maxCursor - this.height) ) {
-				this.trigger('reverseEnd');
+				this.trigger('rakka.reverse.ended');
 				return;
 			}
 		}
@@ -217,13 +253,29 @@
 	// State changes
 	
 	Rakka.prototype.direction = function(direction) {
-		if( direction < 0 ) {
-			this._direction = -1;
-		} else if( direction > 0 ) {
+		direction = (direction < 0 ? -1 : 1);
+		// Unchanged
+		if( direction === this._direction ) {
+			return this;
+		}
+		// Change
+		this._direction = direction;
+		
+		this.trigger('rakka.direction.changed', this._direction);
+		
+		return this;
+	};
+	
+	Rakka.prototype.directionToggle = function() {
+		if( this._direction === -1 ) {
 			this._direction = 1;
 		} else {
-			this.stop();
+			this._direction = -1;
 		}
+		
+		this.trigger('rakka.direction.changed', this._direction);
+		
+		return this;
 	};
 	
 	Rakka.prototype.speed = function(speed) {
@@ -232,6 +284,7 @@
 		} else {
 			// @todo adjust loop delay?
 			this._speed = speed;
+			this.trigger('rakka.speed.changed', this._speed);
 			return this;
 		}
 	};
@@ -285,7 +338,12 @@
 		if( this.interval ) {
 			return;
 		}
+		
 		this.interval = setInterval(this.loop.bind(this), this.delay);
+		
+		// fire event
+		this.bus.trigger('rakka.started');
+		
 		return this;
 	};
 	
@@ -293,18 +351,24 @@
 		if( !this.interval ) {
 			return;
 		}
+		
 		clearInterval(this.interval);
 		this.interval = undefined;
-		// clear timer
+		
+		// Clear timer
 		this.lastTs = 0;
+		
+		// fire event
+		this.bus.trigger('rakka.stopped');
+		
 		return this;
 	};
 	
 	Rakka.prototype.toggle = function toggle() {
 		if( this.interval ) {
-			stop();
+			this.stop();
 		} else {
-			start();
+			this.start();
 		}
 	};
 	
