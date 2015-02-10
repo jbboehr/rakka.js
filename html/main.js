@@ -7,6 +7,7 @@ requirejs.config({
 	}],
 	paths: {
 		bootstrap: '../node_modules/bootstrap/dist/js/bootstrap.min',
+		eventEmitter: '../node_modules/wolfy87-eventemitter/EventEmitter.min',
 		jquery: '../node_modules/jquery/dist/jquery.min'
 	}
 });
@@ -39,6 +40,7 @@ requirejs([
 	}
 	
 	var nColumns = 3;
+	var bufferSize = 4;
 	
 	function start(generator) {
 		$('.static-modal-wrapper').remove();
@@ -46,6 +48,7 @@ requirejs([
 		
 		/*var*/ 
 		/*var*/ rakka = new Rakka({
+			bufferSize : bufferSize,
 			columns : nColumns,
 			container : $('#container'),
 			generator : generator,
@@ -85,6 +88,7 @@ requirejs([
 	function onReady() {
 		$(document).one('click', '.js-reddit-configure .js-example-start', function() {
 			nColumns = parseInt($('.js-reddit-configure input[name="columns"]').val()) || 3;
+			bufferSize = parseInt($('.js-vidme-configure input[name="bufferSize"]').val()) || 4;
 			/*var*/ generator = new RakkaRedditGenerator({
 				mirror: mirrorUrl,
 				subreddit: $('#subreddit').val(),
@@ -95,6 +99,7 @@ requirejs([
 		
 		$(document).one('click', '.js-vidme-configure .js-example-start', function() {
 			nColumns = parseInt($('.js-vidme-configure input[name="columns"]').val()) || 3;
+			bufferSize = parseInt($('.js-vidme-configure input[name="bufferSize"]').val()) || 4;
 			/*var*/ generator = new RakkaVidmeGenerator({
 				mirror: mirrorUrl
 			});
@@ -104,6 +109,11 @@ requirejs([
 		$(document).on('input', 'input[name="columns"]', function(event) {
 			var el = $(event.target);
 			el.parent().find('.input-group-addon').text(el.val());
+		});
+		
+		$(document).on('input', 'input[name="bufferSize"]', function(event) {
+			var el = $(event.target);
+			el.parent().find('.input-group-addon').text(el.val() + 'x');
 		});
 		
 		$(document).on('click', '.js-source-select', function(event) {

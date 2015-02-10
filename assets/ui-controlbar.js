@@ -26,9 +26,9 @@
 			.appendTo(this.$element);
 		
 		this.$reverse = $('<button>')
-			.attr('class', 'btn btn-warning disabled')
+			.attr('class', 'btn btn-warning') // disabled
 			.attr('data-action', 'reverse')
-			.prop('disabled', true)
+			//.prop('disabled', true)
 			.text('Reverse')
 			.on('click', this.onReverseClick.bind(this))
 			.appendTo(this.$element);
@@ -70,33 +70,11 @@
 			.val('' + options.theme)
 			.appendTo(this.$element);
 		
+		// Keyboard shortcuts
+		$(window).on('keydown', this.onKeyDown.bind(this));
 		
-		// @todo dispose
-		$(window).on('keydown', function(event) {
-			switch( event.keyCode ) {
-				case 32: // space
-					this.onToggleClick(event);
-					break;
-				case 70: // f
-					this.onFullscreenClick(event);
-					break;
-				case 72: // h
-					this.onAutoHideClick(event);
-					break;
-				case 88: // x
-					var prev = parseInt(this.$speed.val());
-					prev += 50;
-					this.$speed.val(prev);
-					this.onSpeedChange(event);
-					break;
-				case 90: // z
-					var prev = parseInt(this.$speed.val());
-					prev -= 50;
-					this.$speed.val(prev);
-					this.onSpeedChange(event);
-					break;
-			}
-		}.bind(this));
+		// Revers
+		this.rakka.on('reverseEnd', this.onReverseEnd.bind(this));
 	};
 	
 	RakkaUIControlBar.prototype.isFullscreenSupported = function(elem) {
@@ -106,15 +84,42 @@
 				elem.webkitRequestFullscreen ? true : false);
 	};
 	
+	RakkaUIControlBar.prototype.onKeyDown = function(event) {
+		switch( event.keyCode ) {
+			case 32: // space
+				this.onToggleClick(event);
+				break;
+			case 70: // f
+				this.onFullscreenClick(event);
+				break;
+			case 72: // h
+				this.onAutoHideClick(event);
+				break;
+			case 88: // x
+				var prev = parseInt(this.$speed.val());
+				prev += 50;
+				this.$speed.val(prev);
+				this.onSpeedChange(event);
+				break;
+			case 90: // z
+				var prev = parseInt(this.$speed.val());
+				prev -= 50;
+				this.$speed.val(prev);
+				this.onSpeedChange(event);
+				break;
+		}
+	};
 	
 	RakkaUIControlBar.prototype.onToggleClick = function(event) {
-		if( this.$toggle.attr('data-action') === 'start' ) {
+		var action = typeof arg === 'string' ? arg : this.$toggle.attr('data-action');
+		if( action === 'start' ) {
 			this.rakka.start();
 			this.$toggle.attr('data-action', 'stop')
 				.text('Stop')
 				.removeClass('btn-success')
 				.addClass('btn-danger');
-		} else {
+			this.$reverse.prop('disabled', false).removeClass('disabled');
+		} else if( action === 'stop' ) {
 			this.rakka.stop();
 			this.$toggle.attr('data-action', 'start')
 				.text('Start')
@@ -123,9 +128,23 @@
 		}
 	};
 	
-	RakkaUIControlBar.prototype.onReverseClick = function(event) {
-		alert('Not yet implemented');
+	RakkaUIControlBar.prototype.onReverseClick = function(arg) {
+		var action = typeof arg === 'string' ? arg : this.$reverse.attr('data-action');
+		if( action === 'reverse' ) {
+			this.rakka.direction(-1);
+			this.$reverse.attr('data-action', 'forward').text('Forward');
+		} else if( action === 'forward' ) {
+			this.rakka.direction(1);
+			this.$reverse.attr('data-action', 'reverse').text('Reverse');
+		}
 	};
+	
+	RakkaUIControlBar.prototype.onReverseEnd = function(event) {
+		this.onReverseClick('forward');
+		this.onToggleClick('stop');
+		this.$reverse.prop('disabled', true).addClass('disabled');
+	};
+	
 	
 	RakkaUIControlBar.prototype.onFullscreenClick = function(event) {
 		/*

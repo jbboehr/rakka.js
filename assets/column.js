@@ -40,7 +40,7 @@
 		return this;
 	};
 
-	Column.prototype.fill = function(cursor, circCount) {
+	Column.prototype.fill = function(cursor, circCount, direction) {
 		var newImages = [];
 		var ctx = this.ctx;
 		do {

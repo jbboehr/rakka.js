@@ -3,17 +3,19 @@
     if (typeof define === 'function' && define.amd) {
         define('rakka/rakka', [
 			'jquery',
+			'./bus',
 			'./column',
 			'./image'
 		], factory);
     } else {
         factory(
 			window.jQuery,
+			window.RakkaBus,
 			window.RakkaColumn,
 			window.RakkaImage
 		);
     }
-}(function($, Column, Image) {
+}(function($, Bus, Column, Image) {
 
 	var Rakka = function(options) {
 		this.init(options);
@@ -21,10 +23,15 @@
 	
 	Rakka.prototype.init = function init(options) {
 		// Setup options
+		this._bufferSize = (options && options.bufferSize) || 4;
 		this.debug = (options && options.debug) || false;
 		this.delay = (options && options.delay) || 10;
 		this.nColumns = (options && options.columns) || 6;
 		this._speed = (options && options.speed) || 500;
+		
+		// Setup event bus
+		this.bus = (options && options.bus) || new Bus();
+		this.bus.proxy(this);
 		
 		// Setup generator
 		this.generator = options.generator;
@@ -63,8 +70,11 @@
 		// Setup vars
 		this.cursor = 0;
 		this.circCount = 0;
+		this._direction = 1;
 		this.interval = null;
 		this._events = {};
+		this.maxCursor = 0;
+		this.maxCircCount = 0;
 		
 		// Setup stats
 		this.droppedFrames = 0;
@@ -107,12 +117,15 @@
 		this.droppedFrames += this.currentDroppedFrames;
 		
 		// Delta pixels
-		this.deltaPixels = Math.round(this.deltaTs * this._speed / 1000);
+		this.deltaPixels = Math.round(this._direction * this.deltaTs * this._speed / 1000);
 		
 		this.log('Delta ts/px', this.deltaTs, this.deltaPixels);
 	};
 	
 	Rakka.prototype.fillCircularBuffer = function() {
+		if( this._direction === -1 ) {
+			return;
+		}
 		var images = [];
 		var gcImages = [];
 		for( var i = 0, l = this.columns.length; i < l ; i++ ) {
@@ -176,57 +189,42 @@
 		if( !this.incrCursorOkay ) {
 			return;
 		}
+		if( this._direction === -1 ) {
+			var d = this.maxCircCount - this.circCount;
+			if( d >= 2 ||  (d === 1 && this.cursor < this.maxCursor - this.height) ) {
+				this.trigger('reverseEnd');
+				return;
+			}
+		}
 		
 		this.cursor += this.deltaPixels;
 		if( this.cursor > this.circHeight ) {
 			this.cursor -= this.circHeight;
 			this.circCount++;
+		} else if( this.cursor < 0 ) {
+			this.cursor += this.circHeight;
+			this.circCount--;
 		}
+		
+		this.maxCursor = Math.max(this.maxCursor, this.cursor);
+		this.maxCircCount = Math.max(this.maxCircCount, this.circCount);
 		
 		this.log('Main Cursor', this.cursor, this.circCount);
 	};
 	
 	
 	
-	// Events
-	
-	Rakka.prototype.on = function(name, cb) {
-		if( !(name in this._events) ) {
-			this._events[name] = [];
-		}
-		this._events[name].push(cb);
-		return this;
-	};
-	
-	Rakka.prototype.off = function(name, cb) {
-		if( cb === undefined ) {
-			delete this._events[name];
-		} else if( name in this._events ) {
-			var e = [];
-			for( var x in this._events[name] ) {
-				if( this._events[name][x] !== cb ) {
-					e.push(this._events[name][x]);
-				}
-			}
-			this._events[name] = e;
-		}
-		return this;
-	};
-	
-	Rakka.prototype.trigger = function(name, payload) {
-		var cb, x;
-		if( name in this._events ) {
-			for( x in this._events[name] ) {
-				cb = this._events[name][x];
-				cb(payload, this);
-			}
-		} 
-		return this;
-	};
-	
-	
-	
 	// State changes
+	
+	Rakka.prototype.direction = function(direction) {
+		if( direction < 0 ) {
+			this._direction = -1;
+		} else if( direction > 0 ) {
+			this._direction = 1;
+		} else {
+			this.stop();
+		}
+	};
 	
 	Rakka.prototype.speed = function(speed) {
 		if( speed === undefined ) {
@@ -258,7 +256,7 @@
 		
 		this.circWidth = this.width;
 		// @todo maybe calculate this based on nColumns and expected image aspect ratio
-		this.circHeight = this.height * 4;
+		this.circHeight = this.height * this._bufferSize;
 		this.$circCanvas
 			.width(this.circWidth)
 			.height(this.circHeight)

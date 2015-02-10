@@ -16,6 +16,9 @@
 		"response-time": "~2.2.0",
 		"serve-static": "1.8.*"
 	},
+	"devDependencies": {
+		"jshint": "*"
+	},
 	"scripts": {
 		"mirror": "node bin/mirror",
 		"start": "node_modules/.bin/nw ."
