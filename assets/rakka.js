@@ -315,6 +315,10 @@
 			this.cursor = Math.round(this.cursor * newHeightFactor);
 		}
 		
+		// Fill the circularbuffer with transparent pixels
+		this.circCtx.fillStyle = "rgba(0, 0, 0, 1)";
+		this.circCtx.fillRect(0, 0, this.circWidth, this.circHeight);
+		
 		// Resize the columns
 		for( var i = 0; i < this.columns.length; i++ ) {
 			this.columns[i].resize(this.columnWidth, this.circHeight);

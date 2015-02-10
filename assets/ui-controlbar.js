@@ -15,6 +15,9 @@
 		this.$container = options.container;
 		this.theme = options.theme;
 		
+		this.speedBaseIncrement = 25;
+		this.speedFactor = 1;
+		
 		// Setup bus
 		this.bus = options.bus;
 		this.bus.proxy(this);
@@ -154,7 +157,7 @@
 	RakkaUIControlBar.prototype.onKeyDown = function(event) {
 		switch( event.keyCode ) {
 			case 32: // space
-				this.onToggleClick(event);
+				this.trigger('rakka.toggle');
 				break;
 			case 70: // f
 				this.onFullscreenClick(event);
@@ -163,16 +166,10 @@
 				this.onAutoHideClick(event);
 				break;
 			case 88: // x
-				var prev = parseInt(this.$speed.val());
-				prev += 50;
-				this.$speed.val(prev);
-				this.onSpeedChange(event);
+				this.speedWithFactor(50);
 				break;
 			case 90: // z
-				var prev = parseInt(this.$speed.val());
-				prev -= 50;
-				this.$speed.val(prev);
-				this.onSpeedChange(event);
+				this.speedWithFactor(-50);
 				break;
 		}
 	};
@@ -195,6 +192,23 @@
 	
 	RakkaUIControlBar.prototype.onThemeChange = function(event) {
 		this.$container.trigger('themeChange', $(event.target).val());
+	};
+	
+	RakkaUIControlBar.prototype.speedWithFactor = function(delta) {
+		var val = parseInt(this.$speed.val());
+		val += Math.round(delta * this.speedFactor);
+		this.$speed.val(val);
+		this.onSpeedChange();
+		
+		this.speedFactor += 0.2;
+		
+		// Reset speed factor after a bit
+		if( this.speedFactorTimeout ) {
+			clearTimeout(this.speedFactorTimeout);
+		}
+		this.speedFactorTimeout = setTimeout(function() {
+			this.speedFactor = 1;
+		}.bind(this), 50);
 	};
 	
 	

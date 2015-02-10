@@ -27,13 +27,14 @@ requirejs([
 	RakkaVidmeGenerator
 ) {
 	// Check if we're in node-webkit and try to start the mirror
+	var isNodeWebkit = typeof process === 'object' && 'versions' in process && 'node-webkit' in process.versions;
 	var mirrorUrl;
-	if( 'nwDispatcher' in window ) {
-		/*var*/ mirror = require('../bin/mirror');
+	if( isNodeWebkit && !global.mirror ) {
+		global.mirror = require('../bin/mirror');
 		var portfinder = require('portfinder');
 		portfinder.getPort(function(err, port) {
 			if( !err ) {
-				mirror.listen(port);
+				global.mirror.listen(port);
 				mirrorUrl = 'http://localhost:' + port + '/mirror';
 			}
 		});
