@@ -5,17 +5,19 @@
 			'jquery',
 			'./bus',
 			'./column',
-			'./image'
+			'./image',
+			'./renderer-canvas'
 		], factory);
     } else {
         factory(
 			window.jQuery,
 			window.RakkaBus,
 			window.RakkaColumn,
-			window.RakkaImage
+			window.RakkaImage,
+			window.RakkaRendererCanvas
 		);
     }
-}(function($, Bus, Column, Image) {
+}(function($, Bus, Column, Image, CanvasRenderer) {
 
 	var Rakka = function(options) {
 		this.init(options);
@@ -28,6 +30,13 @@
 		this.delay = (options && options.delay) || 10;
 		this.nColumns = (options && options.columns) || 6;
 		this._speed = (options && options.speed) || 500;
+		
+		this.$container = options.container;
+		
+		// Setup log
+		this.log = this.debug ? function() {
+			console.log.apply(console, arguments);
+		} : function() {};
 		
 		// Setup event bus
 		this.bus = (options && options.bus) || new Bus();
@@ -44,29 +53,14 @@
 			return i;
 		}.bind(this);
 		
-		// Setup log
-		this.log = this.debug ? function() {
-			console.log.apply(console, arguments);
-		} : function() {};
-		
-		// Setup elements
-		this.$container = options.container;
-		this.$canvas = $('<canvas>').appendTo(this.$container);
-		this.$circCanvas = $('<canvas>');
-		if( this.debug ) {
-			this.$circCanvas.appendTo(this.$container);
-		}
-		
-		// Setup canvas contexts
-		this.ctx = this.$canvas[0].getContext('2d');
-		this.circCtx = this.$circCanvas[0].getContext('2d');
-		
-		/*
-		this.circCtx.mozImageSmoothingEnabled = false;
-		this.circCtx.webkitImageSmoothingEnabled = false;
-		this.circCtx.msImageSmoothingEnabled = false;
-		this.circCtx.imageSmoothingEnabled = false;
-		*/
+		// Setup renderer
+		this.renderer = new CanvasRenderer({
+			bufferSize: this._bufferSize,
+			bus: this.bus,
+			container: this.$container,
+			debug: this.debug,
+			log: this.log
+		});
 		
 		// Setup vars
 		this.cursor = 0;
@@ -86,7 +80,6 @@
 		for( var i = 0; i < this.nColumns; i++ ) {
 			this.columns[i] = new Column({
 				bus : this.bus,
-				ctx : this.circCtx,
 				consume : this.consume,
 				index : i,
 				log : this.log
@@ -118,10 +111,10 @@
 				delay : self.delay,
 				speed : self._speed,
 				droppedFrames : Math.round(self.droppedFrames),
-				canvasWidth : self.$canvas.width(),
-				canvasHeight : self.$canvas.height(),
-				circCanvasWidth : self.$circCanvas.width(),
-				circCanvasHeight : self.$circCanvas.height(),
+				width : self.width,
+				height : self.height,
+				bufferWidth : self.width,
+				bufferHeight : self.bufferHeight,
 			};
 			self.trigger('rakka.stats', stats);
 		});
@@ -189,11 +182,11 @@
 		}
 		
 		this.cursor += this.deltaPixels;
-		if( this.cursor > this.circHeight ) {
-			this.cursor -= this.circHeight;
+		if( this.cursor > this.bufferHeight ) {
+			this.cursor -= this.bufferHeight;
 			this.circCount++;
 		} else if( this.cursor < 0 ) {
-			this.cursor += this.circHeight;
+			this.cursor += this.bufferHeight;
 			this.circCount--;
 		}
 		
@@ -204,86 +197,18 @@
 	};
 	
 	Rakka.prototype.draw = function() {
-		this.drawCircularBuffer();
-		this.drawMainBuffer();
-	};
-	
-	Rakka.prototype.drawCircularBuffer = function() {
+		// Pull everything out that needs a redraw
+		var redraws = [];
 		for( var x in this.columns ) {
 			var column = this.columns[x];
 			for( var i = 0, l = column.redraws.length; i < l; i++ ) {
-				this.drawCircularBufferImage(column.redraws[i]);
+				redraws.push(column.redraws[i]);
 			}
 			column.redraws = [];
 		}
+		this.renderer.draw(this.cursor, redraws);
 	};
 	
-	Rakka.prototype.drawCircularBufferImage = function(image) {
-		var ctx = this.circCtx;
-		var circHeight = this.circHeight;
-		
-		var needsSplit = ( image.nextCircCount > image.circCount );
-		
-		// Draw the image
-		// @todo maybe reduce the size of the copy?
-		ctx.drawImage(image.img, image.offset, image.cursor, image.width, image.height);
-		if( needsSplit ) {
-			// If it needs a split, draw to the top as well
-			ctx.drawImage(image.img, image.offset, image.cursor - circHeight, image.width, image.height);
-		}
-		
-		// Draw the label
-		var text = '#' + image.index;
-		var size = 24;
-		var padding = 4;
-		ctx.font = size + "px bold verdana, sans-serif";
-		ctx.textBaseline = 'middle';
-		var tm = ctx.measureText(text);
-		ctx.globalAlpha = 0.75;
-		ctx.fillStyle = '#999999';
-		ctx.fillRect(image.offset, image.cursor, Math.min(image.width, tm.width + padding * 2), size + padding * 2);
-		ctx.strokeStyle = '#909090';
-		ctx.strokeRect(image.offset, image.cursor, Math.min(image.width, tm.width + padding * 2), size + padding * 2);
-		ctx.globalAlpha = 1;
-		ctx.fillStyle = '#ffffff';
-		ctx.fillText(text, image.offset + padding, Math.round(image.cursor + (size / 2) + padding + 1));
-	};
-	
-	Rakka.prototype.drawMainBuffer = function() {
-		// Copy the circular buffer onto the canvas
-		var sx, sy, sw, sh, dx, dy, dw, dh;
-		
-		// Source/Destination with is always main width, x is always 0
-		dw = sw = this.width;
-		dx = sx = 0;
-		
-		// If cursor > height, then there's only one copy necessary
-		if( this.cursor >= this.height ) {
-			// Copy: sy = cursor - height, sh = height
-			sy = this.cursor - this.height;
-			dh = sh = this.height;
-			dy = 0;
-			
-			this.log('Section0', sx, sy, sw, sh, dx, dy, dw, dh);
-			this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
-		} else {
-			// Copy: sy = 0, sh = cursor
-			sy = 0;
-			dh = sh = this.cursor;
-			dy = this.height - this.cursor;
-			
-			this.log('Section1', sx, sy, sw, sh, dx, dy, dw, dh);
-			this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
-			
-			// Copy: sy = circHeight - (height - cursor)
-			sy = this.circHeight - (this.height - this.cursor);
-			dh = sh = this.height - this.cursor;
-			dy = 0;
-			
-			this.log('Section2', sx, sy, sw, sh, dx, dy, dw, dh);
-			this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
-		}
-	};
 	
 	
 	
@@ -337,25 +262,10 @@
 		
 		this.width = width;
 		this.height = height;
-		this.$canvas
-			.width(this.width)
-			.height(this.height)
-			.prop('width', this.width)
-			.prop('height', this.height);
-		this.log('Canvas Dimensions', this.width, this.height);
-		
-		this.circWidth = this.width;
-		// @todo maybe calculate this based on nColumns and expected image aspect ratio
-		this.circHeight = this.height * this._bufferSize;
-		this.$circCanvas
-			.width(this.circWidth)
-			.height(this.circHeight)
-			.prop('width', this.circWidth)
-			.prop('height', this.circHeight);
-		this.log('Circular Buffer Dimensions', this.circWidth, this.circHeight);
+		this.bufferHeight = this.height * this._bufferSize;
 		
 		// Calc column width
-		this.columnWidth = Math.floor(this.circWidth / this.nColumns);
+		this.columnWidth = Math.floor(this.width / this.nColumns);
 		
 		// Resize generator (for mirror)
 		this.generator.resize(this.columnWidth, this.height);
@@ -365,17 +275,13 @@
 			this.cursor = Math.round(this.cursor * newHeightFactor);
 		}
 		
-		// Fill the circularbuffer with transparent pixels
-		this.circCtx.fillStyle = "rgba(0, 0, 0, 1)";
-		this.circCtx.fillRect(0, 0, this.circWidth, this.circHeight);
-		
 		// Resize the columns
 		for( var i = 0; i < this.columns.length; i++ ) {
-			this.columns[i].resize(this.columnWidth, this.circHeight);
+			this.columns[i].resize(this.columnWidth, this.bufferHeight);
 		}
 		
-		// Maybe draw the circular buffer into the main buffer?
-		this.drawMainBuffer();
+		// Resize renderer
+		this.renderer.resize(this.width, this.height);
 	};
 	
 	Rakka.prototype.start = function start() {

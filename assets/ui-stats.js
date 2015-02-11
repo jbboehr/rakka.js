@@ -91,8 +91,8 @@
 		this.$delay.text(stats.delay);
 		this.$speed.text(stats.speed);
 		this.$dropped.text(stats.droppedFrames);
-		this.$dims.text(stats.canvasWidth + 'x' + stats.canvasHeight  + ' / ' +
-						stats.circCanvasWidth + 'x' + stats.circCanvasHeight);
+		this.$dims.text(stats.width + 'x' + stats.height  + ' / ' +
+						stats.bufferWidth + 'x' + stats.bufferHeight);
 	};
 	
 	
