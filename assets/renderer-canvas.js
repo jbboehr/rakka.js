@@ -119,15 +119,17 @@
 			dh = sh = cursor;
 			dy = this.height - cursor;
 			
-			this.log('Section1', sx, sy, sw, sh, dx, dy, dw, dh);
-			this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
+			if( cursor > 0 ) {
+				console.log('Section1', sx, sy, sw, sh, dx, dy, dw, dh);
+				this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
+			}
 			
 			// Copy: sy = circHeight - (height - cursor)
 			sy = this.circHeight - (this.height - cursor);
 			dh = sh = this.height - cursor;
 			dy = 0;
 			
-			this.log('Section2', sx, sy, sw, sh, dx, dy, dw, dh);
+			console.log('Section2', sx, sy, sw, sh, dx, dy, dw, dh);
 			this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
 		}
 	};

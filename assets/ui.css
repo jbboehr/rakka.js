@@ -72,11 +72,25 @@
 .rakka-ui-controlbar > input[type="range"] {
 	max-width: 25%;
 	display: inline-block;
+	background-color: rgba(255, 255, 255, 0.075);
+}
+
+.rakka-theme-dark .rakka-ui-controlbar > input[type="range"] {
+	border-color: #444;
 }
 
 .rakka-ui-controlbar > select {
 	width: auto;
 	float: right;
+}
+
+.rakka-ui-controlbar > select > option {
+	padding: 6px;
+}
+
+.rakka-theme-dark  > select {
+	color: #fff;
+	background-color: rgba(255, 255, 255, 0.075);
 }
 
 .rakka-ui-controlbar button[data-action="auto-hide"] {

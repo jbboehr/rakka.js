@@ -60,6 +60,7 @@
 		}
 		
 		this.$speed = $('<input type="range">')
+			.addClass('form-control')
 			.prop('min', 50)
 			.prop('max', 2000)
 			.on('input', this.onSpeedChange.bind(this))
@@ -76,7 +77,7 @@
 		this.$theme = $('<select>')
 			.attr('class', 'form-control')
 			.attr('data-action', 'change-theme')
-			.append('<option value=""></option>')
+			//.append('<option value=""></option>')
 			.append('<option value="light">Light</option>')
 			.append('<option value="dark">Dark</option>')
 			.on('change', this.onThemeChange.bind(this))
