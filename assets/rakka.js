@@ -18,7 +18,7 @@
 		);
     }
 }(function($, Bus, Column, Image, CanvasRenderer) {
-
+	
 	var Rakka = function(options) {
 		this.init(options);
 	};
@@ -27,7 +27,6 @@
 		// Setup options
 		this._bufferSize = (options && options.bufferSize) || 4;
 		this.debug = (options && options.debug) || false;
-		this.delay = (options && options.delay) || 10;
 		this.nColumns = (options && options.columns) || 6;
 		this._speed = (options && options.speed) || 500;
 		
@@ -66,6 +65,8 @@
 		this.cursor = 0;
 		this.circCount = 0;
 		this._direction = 1;
+		this.fps = null;
+		this.fpsSmooth = null;
 		this.interval = null;
 		this._events = {};
 		this.maxCursor = 0;
@@ -108,9 +109,9 @@
 				imagesLoading : self.generator.semaphore,
 				imagesPreloaded : self.generator.count(),
 				imagesConsumed : self.imagesConsumed,
-				delay : self.delay,
+				fps : self.fps,
+				fpsSmooth : self.fpsSmooth,
 				speed : self._speed,
-				droppedFrames : Math.round(self.droppedFrames),
 				width : self.width,
 				height : self.height,
 				bufferWidth : self.width,
@@ -123,31 +124,33 @@
 	
 	// Loop
 	
-	Rakka.prototype.loop = function() {
+	Rakka.prototype.loop = function(ts) {
 		this.incrCursorOkay = true;
-		this.calculate();
-		this.draw();
-	};
-	
-	Rakka.prototype.calculate = function() {
-		this.calculateDelta();
+		this.calculateDelta(ts);
 		this.calculateColumns();
 		this.calculateCursor();
+		this.draw();
+		
+		this.interval = requestAnimationFrame(this.loop.bind(this));
 	};
 	
-	Rakka.prototype.calculateDelta = function() {
+	Rakka.prototype.calculateDelta = function(ts) {
 		// Delta time
-		var now = Date.now();
+		if( !ts ) {
+			ts = Date.now();
+		}
 		if( this.lastTs ) {
-			this.deltaTs = now - this.lastTs;
+			this.deltaTs = ts - this.lastTs;
+			
+			// Frames per second
+			var smoothFactor = 0.2
+			this.fps = 1000 / this.deltaTs;
+			this.fpsSmooth = smoothFactor * this.fps + (1 - smoothFactor) * this.fpsSmooth;
+			//(this.fps * 2 + (this.fpsSmooth || this.fps)) / 3;
 		} else {
 			this.deltaTs = 0;
 		}
-		this.lastTs = now;
-		
-		// Dropped frames (inaccurate?)
-		this.currentDroppedFrames = Math.max(0, (this.deltaTs - 1) / this.delay - 1);
-		this.droppedFrames += this.currentDroppedFrames;
+		this.lastTs = ts;
 		
 		// Delta pixels
 		this.deltaPixels = Math.round(this._direction * this.deltaTs * this._speed / 1000);
@@ -244,7 +247,6 @@
 		if( speed === undefined ) {
 			return this._speed;
 		} else {
-			// @todo adjust loop delay?
 			this._speed = speed;
 			this.trigger('rakka.speed.changed', this._speed);
 			return this;
@@ -289,7 +291,7 @@
 			return;
 		}
 		
-		this.interval = setInterval(this.loop.bind(this), this.delay);
+		this.interval = requestAnimationFrame(this.loop.bind(this));
 		
 		// fire event
 		this.bus.trigger('rakka.started');
@@ -302,7 +304,8 @@
 			return;
 		}
 		
-		clearInterval(this.interval);
+		//clearInterval(this.interval);
+		cancelAnimationFrame(this.interval);
 		this.interval = undefined;
 		
 		// Clear timer
@@ -321,6 +324,41 @@
 			this.start();
 		}
 	};
+	
+	
+	
+	// requestAnimationFrame polyfill
+	// https://gist.github.com/paulirish/1579671
+	(function() {
+		var lastTime = 0;
+		var vendors = ['ms', 'moz', 'webkit', 'o'];
+		for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+			window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+			window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] 
+									   || window[vendors[x]+'CancelRequestAnimationFrame'];
+		}
+	 
+		if( !window.requestAnimationFrame ) {
+			window.requestAnimationFrame = function(callback, element) {
+				var currTime = Date.now();
+				var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+				var id = window.setTimeout(function() {
+					lastTime = Date.now();
+					callback(lastTime/*currTime + timeToCall*/);
+				}, timeToCall);
+				//lastTime = currTime + timeToCall;
+				return id;
+			};
+		}
+	 
+		if( !window.cancelAnimationFrame ) {
+			window.cancelAnimationFrame = function(id) {
+				lastTime = 0;
+				clearTimeout(id);
+			};
+		}
+	}());
+	
 	
 	
 	// Exports

@@ -9,6 +9,11 @@ requirejs.config({
 		bootstrap: '../node_modules/bootstrap/dist/js/bootstrap',
 		eventEmitter: '../node_modules/wolfy87-eventemitter/EventEmitter',
 		jquery: '../node_modules/jquery/dist/jquery'
+	},
+	shim: {
+		bootstrap: {
+			deps: ['jquery']
+		}
 	}
 });
 

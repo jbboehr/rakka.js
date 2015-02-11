@@ -55,20 +55,14 @@
 			.appendTo(this.$element)
 			.find('span');
 		
-		this.$delay = $('<div>')
-			.text('Delay: ')
-			.append('<span class="val">')
-			.appendTo(this.$element)
-			.find('span');
-		
 		this.$speed = $('<div>')
 			.text('Speed: ')
 			.append('<span class="val">')
 			.appendTo(this.$element)
 			.find('span');
 		
-		this.$dropped = $('<div>')
-			.text('Dropped Frames: ')
+		this.$fps = $('<div>')
+			.text('FPS: ')
 			.append('<span class="val">')
 			.appendTo(this.$element)
 			.find('span');
@@ -88,9 +82,8 @@
 		this.$imagesLoading.text(stats.imagesLoading);
 		this.$imagesPreloaded.text(stats.imagesPreloaded);
 		this.$imagesConsumed.text(stats.imagesConsumed);
-		this.$delay.text(stats.delay);
 		this.$speed.text(stats.speed);
-		this.$dropped.text(stats.droppedFrames);
+		this.$fps.text(/*stats.fps + ' / ' + */Math.round(stats.fpsSmooth));
 		this.$dims.text(stats.width + 'x' + stats.height  + ' / ' +
 						stats.bufferWidth + 'x' + stats.bufferHeight);
 	};
