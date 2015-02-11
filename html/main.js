@@ -6,9 +6,9 @@ requirejs.config({
 		main: 'rakka'
 	}],
 	paths: {
-		bootstrap: '../node_modules/bootstrap/dist/js/bootstrap.min',
-		eventEmitter: '../node_modules/wolfy87-eventemitter/EventEmitter.min',
-		jquery: '../node_modules/jquery/dist/jquery.min'
+		bootstrap: '../node_modules/bootstrap/dist/js/bootstrap',
+		eventEmitter: '../node_modules/wolfy87-eventemitter/EventEmitter',
+		jquery: '../node_modules/jquery/dist/jquery'
 	}
 });
 
@@ -38,6 +38,8 @@ requirejs([
 				mirrorUrl = 'http://localhost:' + port + '/mirror';
 			}
 		});
+	} else if( ('' + window.location).match(/localhost:3000/) ) {
+		mirrorUrl = 'http://localhost:3000/mirror';
 	}
 	
 	var nColumns = 3;

@@ -51,7 +51,7 @@
 	};
 	
 	Bus.prototype.triggerSync = function(name, args, async) {
-		var cb, i, ev;
+		var i, ev;
 		
 		if( !(name in this._events) ) {
 			return this;
@@ -64,15 +64,15 @@
 		i = this._events[name].length;
 		while( i-- ) {
 			ev = this._events[name][i];
-			cb = ev.cb;
+			var cb = ev.cb;
 			
 			//console.log(name, i, cb, args);
 			
 			// Run the callback
 			if( async || ev.async ) {
 				setTimeout(function() {
-					cb.apply(null, args);
-				}, 0);
+					this.apply(null, args);
+				}.bind(cb), 0);
 			} else {
 				cb.apply(null, args);
 			}
