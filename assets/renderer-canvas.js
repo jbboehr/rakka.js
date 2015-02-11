@@ -120,7 +120,7 @@
 			dy = this.height - cursor;
 			
 			if( cursor > 0 ) {
-				console.log('Section1', sx, sy, sw, sh, dx, dy, dw, dh);
+				this.log('Section1', sx, sy, sw, sh, dx, dy, dw, dh);
 				this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
 			}
 			
@@ -129,7 +129,7 @@
 			dh = sh = this.height - cursor;
 			dy = 0;
 			
-			console.log('Section2', sx, sy, sw, sh, dx, dy, dw, dh);
+			this.log('Section2', sx, sy, sw, sh, dx, dy, dw, dh);
 			this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
 		}
 	};

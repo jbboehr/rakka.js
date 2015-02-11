@@ -61,8 +61,9 @@
 		
 		this.$speed = $('<input type="range">')
 			.addClass('form-control')
-			.prop('min', 50)
-			.prop('max', 2000)
+			.prop('min', 60)
+			.prop('max', 2100)
+			.prop('step', 30)
 			.on('input', this.onSpeedChange.bind(this))
 			.appendTo(this.$element);
 		

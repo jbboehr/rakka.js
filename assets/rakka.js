@@ -65,6 +65,7 @@
 		this.cursor = 0;
 		this.circCount = 0;
 		this._direction = 1;
+		this.deltaPixelsAdjust = 0;
 		this.fps = null;
 		this.fpsSmooth = null;
 		this.interval = null;
@@ -153,7 +154,10 @@
 		this.lastTs = ts;
 		
 		// Delta pixels
-		this.deltaPixels = Math.round(this._direction * this.deltaTs * this._speed / 1000);
+		this.deltaPixelsFloat = this._direction * this.deltaTs * this._speed / 1000;
+		this.deltaPixelsFloat -= this.deltaPixelsAdjust;
+		this.deltaPixels = Math.round(this.deltaPixelsFloat);
+		this.deltaPixelsAdjust = this.deltaPixels - this.deltaPixelsFloat;
 		
 		this.log('Delta ts/px', this.deltaTs, this.deltaPixels);
 	};
