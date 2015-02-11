@@ -109,7 +109,6 @@
 	};
 	
 	RakkaUIControlBar.prototype.onRakkaDirectionChanged = function(direction) {
-		console.log(direction, arguments);
 		if( direction === -1 ) {
 			this.$reverse.text('Forward');
 		} else {
@@ -133,7 +132,7 @@
 	};
 	
 	RakkaUIControlBar.prototype.onRakkaReverseEnded = function() {
-		this.onReverseClick('forward');
+		this.trigger('rakka.direction.change', 1);
 		this.trigger('rakka.stop');
 		this.$reverse.prop('disabled', true).addClass('disabled');
 	};

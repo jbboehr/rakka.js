@@ -132,10 +132,14 @@
 	
 	Rakka.prototype.loop = function() {
 		this.incrCursorOkay = true;
-		this.calculateDelta();
-		this.fillCircularBuffer();
+		this.calculate();
 		this.draw();
-		this.adjustCursor();
+	};
+	
+	Rakka.prototype.calculate = function() {
+		this.calculateDelta();
+		this.calculateColumns();
+		this.calculateCursor();
 	};
 	
 	Rakka.prototype.calculateDelta = function() {
@@ -158,7 +162,7 @@
 		this.log('Delta ts/px', this.deltaTs, this.deltaPixels);
 	};
 	
-	Rakka.prototype.fillCircularBuffer = function() {
+	Rakka.prototype.calculateColumns = function() {
 		if( this._direction === -1 ) {
 			return;
 		}
@@ -172,7 +176,80 @@
 		}
 	};
 	
+	Rakka.prototype.calculateCursor = function() {
+		if( !this.incrCursorOkay ) {
+			return;
+		}
+		if( this._direction === -1 ) {
+			var d = this.maxCircCount - this.circCount;
+			if( d >= 2 ||  (d === 1 && this.cursor < this.maxCursor - this.height) ) {
+				this.trigger('rakka.reverse.ended');
+				return;
+			}
+		}
+		
+		this.cursor += this.deltaPixels;
+		if( this.cursor > this.circHeight ) {
+			this.cursor -= this.circHeight;
+			this.circCount++;
+		} else if( this.cursor < 0 ) {
+			this.cursor += this.circHeight;
+			this.circCount--;
+		}
+		
+		this.maxCursor = Math.max(this.maxCursor, this.cursor);
+		this.maxCircCount = Math.max(this.maxCircCount, this.circCount);
+		
+		this.log('Main Cursor', this.cursor, this.circCount);
+	};
+	
 	Rakka.prototype.draw = function() {
+		this.drawCircularBuffer();
+		this.drawMainBuffer();
+	};
+	
+	Rakka.prototype.drawCircularBuffer = function() {
+		for( var x in this.columns ) {
+			var column = this.columns[x];
+			for( var i = 0, l = column.redraws.length; i < l; i++ ) {
+				this.drawCircularBufferImage(column.redraws[i]);
+			}
+			column.redraws = [];
+		}
+	};
+	
+	Rakka.prototype.drawCircularBufferImage = function(image) {
+		var ctx = this.circCtx;
+		var circHeight = this.circHeight;
+		
+		var needsSplit = ( image.nextCircCount > image.circCount );
+		
+		// Draw the image
+		// @todo maybe reduce the size of the copy?
+		ctx.drawImage(image.img, image.offset, image.cursor, image.width, image.height);
+		if( needsSplit ) {
+			// If it needs a split, draw to the top as well
+			ctx.drawImage(image.img, image.offset, image.cursor - circHeight, image.width, image.height);
+		}
+		
+		// Draw the label
+		var text = '#' + image.index;
+		var size = 24;
+		var padding = 4;
+		ctx.font = size + "px bold verdana, sans-serif";
+		ctx.textBaseline = 'middle';
+		var tm = ctx.measureText(text);
+		ctx.globalAlpha = 0.75;
+		ctx.fillStyle = '#999999';
+		ctx.fillRect(image.offset, image.cursor, Math.min(image.width, tm.width + padding * 2), size + padding * 2);
+		ctx.strokeStyle = '#909090';
+		ctx.strokeRect(image.offset, image.cursor, Math.min(image.width, tm.width + padding * 2), size + padding * 2);
+		ctx.globalAlpha = 1;
+		ctx.fillStyle = '#ffffff';
+		ctx.fillText(text, image.offset + padding, Math.round(image.cursor + (size / 2) + padding + 1));
+	};
+	
+	Rakka.prototype.drawMainBuffer = function() {
 		// Copy the circular buffer onto the canvas
 		var sx, sy, sw, sh, dx, dy, dw, dh;
 		
@@ -206,33 +283,6 @@
 			this.log('Section2', sx, sy, sw, sh, dx, dy, dw, dh);
 			this.ctx.drawImage(this.$circCanvas[0], sx, sy, sw, sh, dx, dy, dw, dh);
 		}
-	};
-	
-	Rakka.prototype.adjustCursor = function() {
-		if( !this.incrCursorOkay ) {
-			return;
-		}
-		if( this._direction === -1 ) {
-			var d = this.maxCircCount - this.circCount;
-			if( d >= 2 ||  (d === 1 && this.cursor < this.maxCursor - this.height) ) {
-				this.trigger('rakka.reverse.ended');
-				return;
-			}
-		}
-		
-		this.cursor += this.deltaPixels;
-		if( this.cursor > this.circHeight ) {
-			this.cursor -= this.circHeight;
-			this.circCount++;
-		} else if( this.cursor < 0 ) {
-			this.cursor += this.circHeight;
-			this.circCount--;
-		}
-		
-		this.maxCursor = Math.max(this.maxCursor, this.cursor);
-		this.maxCircCount = Math.max(this.maxCircCount, this.circCount);
-		
-		this.log('Main Cursor', this.cursor, this.circCount);
 	};
 	
 	
@@ -323,6 +373,9 @@
 		for( var i = 0; i < this.columns.length; i++ ) {
 			this.columns[i].resize(this.columnWidth, this.circHeight);
 		}
+		
+		// Maybe draw the circular buffer into the main buffer?
+		this.drawMainBuffer();
 	};
 	
 	Rakka.prototype.start = function start() {
