@@ -6,7 +6,8 @@
 			'./bus',
 			'./column',
 			'./image',
-			'./renderer-canvas'
+			'./renderer-canvas',
+			'./renderer-three'
 		], factory);
     } else {
         factory(
@@ -14,10 +15,11 @@
 			window.RakkaBus,
 			window.RakkaColumn,
 			window.RakkaImage,
-			window.RakkaRendererCanvas
+			window.RakkaRendererCanvas,
+			window.RakkaRendererThree
 		);
     }
-}(function($, Bus, Column, Image, CanvasRenderer) {
+}(function($, Bus, Column, Image, CanvasRenderer, ThreeRenderer) {
 
 	var Rakka = function(options) {
 		this.init(options);
@@ -54,7 +56,8 @@
 		}.bind(this);
 		
 		// Setup renderer
-		this.renderer = new CanvasRenderer({
+		var Renderer = ThreeRenderer; //CanvasRenderer;
+		this.renderer = new Renderer({
 			bufferSize: this._bufferSize,
 			bus: this.bus,
 			container: this.$container,

@@ -14,7 +14,8 @@
 		"qs": "~2.3.3",
 		"requirejs": "~2.1.15",
 		"response-time": "~2.2.0",
-		"serve-static": "1.8.*"
+		"serve-static": "1.8.*",
+		"three": "~0.69.0"
 	},
 	"devDependencies": {
 		"jshint": "*"

@@ -8,7 +8,13 @@ requirejs.config({
 	paths: {
 		bootstrap: '../node_modules/bootstrap/dist/js/bootstrap',
 		eventEmitter: '../node_modules/wolfy87-eventemitter/EventEmitter',
-		jquery: '../node_modules/jquery/dist/jquery'
+		jquery: '../node_modules/jquery/dist/jquery',
+		three: '../node_modules/three/three'
+	},
+	shim: {
+		three: {
+			exports: 'THREE'
+		}
 	}
 });
 
