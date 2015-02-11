@@ -58,7 +58,8 @@
 			bus: this.bus,
 			container: this.$container,
 			debug: this.debug,
-			log: this.log
+			log: this.log,
+			maxDrawsPerFrame: this.nColumns * 4
 		});
 		
 		// Setup vars

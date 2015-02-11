@@ -16,6 +16,7 @@
 		this.$container = options.container;
 		this.debug = options.debug;
 		this.log = options.log;
+		this.maxDrawsPerFrame = options.maxDrawsPerFrame || 3;
 		
 		// Setup canvases
 		this.$canvas = $('<canvas>').appendTo(this.$container);
@@ -27,6 +28,9 @@
 		// Setup canvas contexts
 		this.ctx = this.$canvas[0].getContext('2d');
 		this.circCtx = this.$circCanvas[0].getContext('2d');
+		
+		// Setup vars
+		this.redrawBacklog = [];
 	}
 	
 	RakkaRendererCanvas.prototype.resize = function(width, height) {
@@ -61,9 +65,37 @@
 	};
 	
 	RakkaRendererCanvas.prototype.drawCircularBuffer = function(redraws) {
-		for( var x in redraws ) {
-			this.drawCircularBufferImage(redraws[x]);
+		var max = this.maxDrawsPerFrame + 10;
+		var i;
+		var l = redraws.length;
+		var l2 = this.redrawBacklog.length;
+		while(max--) {
+			if( l > 0 ) {
+				this.drawCircularBufferImage(redraws.shift());
+				l--;
+				continue;
+			} else if( l2 > 0 ) {
+				this.drawCircularBufferImage(this.redrawBacklog.shift());
+				l2--;
+			}
 		}
+		for( i = 0, l = redraws.length; i < l; i++ ) {
+			this.redrawBacklog.push(redraws.shift());
+		}
+		
+		/*
+		for( i = 0, l = redraws.length; i < l; i++, max-- ) {
+			if( max ) {
+				this.drawCircularBufferImage(redraws.shift());
+			} else {
+				this.redrawBacklog.push(redraws.shift());
+			}
+		}
+		for( i =  0, l = this.redrawBacklog.length; i < l && max > 0; i++, max-- ) {
+			this.drawCircularBufferImage(this.redrawBacklog.shift());
+		}
+		console.log(this.maxDrawsPerFrame - Math.max(max, 0));
+		*/
 	};
 	
 	RakkaRendererCanvas.prototype.drawCircularBufferImage = function(image) {
