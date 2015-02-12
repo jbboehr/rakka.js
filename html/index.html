@@ -15,12 +15,13 @@
 			<div>
 				<a class="js-source-select" data-source="vidme">vidme</a>
 				<a class="js-source-select" data-source="reddit">reddit</a>
+				<a class="js-source-select" data-source="files">files</a>
 			</div>
 		</div>
 		
 		<div id="container" class="hide"></div>
 		
-		<div class="static-modal-wrapper js-vidme-configure hide">
+		<div class="static-modal-wrapper js-rakka-configure hide" data-source="vidme">
 			<div class="modal">
 				<div class="modal-dialog">
 					<div class="modal-content">
@@ -38,7 +39,7 @@
 			</div>
 		</div>
 		
-		<div class="static-modal-wrapper js-reddit-configure hide">
+		<div class="static-modal-wrapper js-rakka-configure hide" data-source="reddit">
 			<div class="modal">
 				<div class="modal-dialog">
 					<div class="modal-content">
@@ -47,8 +48,8 @@
 						</div>
 						<div class="modal-body">
 							<div class="form-group">
-								<label for="exampleInputEmail1">Subreddit:</label>
-								<input type="subreddit" class="form-control" id="subreddit" placeholder="Enter a subreddit">
+								<label for="subreddit">Subreddit:</label>
+								<input type="text" name="subreddit" class="form-control" id="subreddit" placeholder="Enter a subreddit">
 								<p class="help-block">
 									Choose one that posts lots of pictures! (like StarshipPorn)
 								</p>
@@ -59,6 +60,37 @@
 									<option value="hot">Hot</option>
 									<option value="top">Top</option>
 								</select>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-primary js-example-start">Start</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="static-modal-wrapper js-rakka-configure hide" data-source="files">
+			<div class="modal">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title">Files</h4>
+						</div>
+						<div class="modal-body">
+							<div class="form-group">
+								<!--label for="files">Files:</label-->
+								<div class="input-group">
+									<span class="input-group-btn">
+										<span class="btn btn-default btn-file">
+											Browse… <input type="file" rem-class="form-control" id="files" webkitdirectory mozdirectory directory multiple>
+										</span>
+									</span>
+									<span class="form-control js-btn-file-value"></span>
+								</div>
+								<p class="help-block">
+									Select a directory (Chrome) or multiple files (Firefox).
+								</p>
 							</div>
 						</div>
 						<div class="modal-footer">

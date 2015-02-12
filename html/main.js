@@ -21,6 +21,7 @@ requirejs([
 	'rakka',
 	'rakka/bus',
 	'rakka/ui',
+	'rakka/generator-files',
 	'rakka/generator-reddit',
 	'rakka/generator-vidme',
 	'bootstrap'
@@ -29,6 +30,7 @@ requirejs([
 	Rakka,
 	RakkaBus,
 	RakkaUI,
+	RakkaFilesGenerator,
 	RakkaRedditGenerator,
 	RakkaVidmeGenerator
 ) {
@@ -47,6 +49,9 @@ requirejs([
 	} else if( ('' + window.location).match(/localhost:3000/) ) {
 		mirrorUrl = 'http://localhost:3000/mirror';
 	}
+	
+	// Main
+	var fileList;
 	
 	function start(generator) {
 		$('.static-modal-wrapper').remove();
@@ -74,43 +79,57 @@ requirejs([
 		rakka.start();
 	}
 	
-	function startSource(source) {
-		if( source == 'vidme' ) {
-			$('.js-vidme-configure').removeClass('hide');
-			return true;
-		} else if( source == 'reddit' ) {
-			$('.js-reddit-configure').removeClass('hide');
-			return true;
-			
-		} else {
-			return;
-		}
+	function startReddit() {
+		/*var*/ generator = new RakkaRedditGenerator({
+			mirror: mirrorUrl,
+			subreddit: $('#subreddit').val(),
+			sort: $('#reddit-sort').val() || 'new'
+		});
 		start(generator);
+	}
+	
+	function startVidme() {
+		/*var*/ generator = new RakkaVidmeGenerator({
+			mirror: mirrorUrl
+		});
+		start(generator);
+	}
+	
+	function startFiles() {
+		/*var*/ generator = new RakkaFilesGenerator({
+			files: fileList
+		});
+		start(generator);
+	}
+	
+	function startSource(source) {
+		switch( source ) {
+			case 'reddit': startReddit(); break;
+			case 'vidme': startVidme(); break;
+			case 'files': startFiles(); break;
+		}
+	}
+	
+	function selectSource(source) {
+		$('.js-rakka-configure[data-source="' + source + '"]').removeClass('hide');
 		return true;
 	}
 	
 	function onReady() {
-		$(document).one('click', '.js-reddit-configure .js-example-start', function() {
-			/*var*/ generator = new RakkaRedditGenerator({
-				mirror: mirrorUrl,
-				subreddit: $('#subreddit').val(),
-				sort: $('#reddit-sort').val() || 'new'
-			});
-			start(generator);
+		$(document).on('click', '.js-rakka-configure .js-example-start', function(event) {
+			startSource($(event.target).parents('.js-rakka-configure').attr('data-source'));
 		});
 		
-		$(document).one('click', '.js-vidme-configure .js-example-start', function() {
-			/*var*/ generator = new RakkaVidmeGenerator({
-				mirror: mirrorUrl
-			});
-			start(generator);
+		$(document).on('change', '#files', function(event) {
+			fileList = event.target.files;
+			$('.js-btn-file-value').text(fileList.length + ' files');
 		});
+		
+		$(document).one('click', '.js-vidme-configure .js-example-start', startVidme);
 		
 		$(document).on('click', '.js-source-select', function(event) {
-			var el = $(event.target);
-			if( startSource(el.attr('data-source')) ) {
-				$('#selector').remove();
-			}
+			selectSource($(event.target).attr('data-source'));
+			$('#selector').remove();
 		});
 	}
 	
