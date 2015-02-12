@@ -54,7 +54,6 @@
 		
 		// Setup renderer
 		this.renderer = new CanvasRenderer({
-			bufferSize: this._bufferSize,
 			bus: this.bus,
 			container: this.$container,
 			debug: this.debug,
@@ -222,6 +221,16 @@
 	
 	// State changes
 	
+	Rakka.prototype.bufferSize = function(bufferSize) {
+		if( bufferSize === undefined ) {
+			return this._bufferSize;
+		} else {
+			this._bufferSize = bufferSize;
+			this.resize();
+			return this;
+		}
+	};
+	
 	Rakka.prototype.direction = function(direction) {
 		direction = (direction < 0 ? -1 : 1);
 		// Unchanged
@@ -288,7 +297,7 @@
 		}
 		
 		// Resize renderer
-		this.renderer.resize(this.width, this.height);
+		this.renderer.resize(this.width, this.height, this.bufferHeight);
 	};
 	
 	Rakka.prototype.start = function start() {

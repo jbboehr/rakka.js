@@ -12,7 +12,6 @@
 }(function($) {
 	
 	function RakkaRendererCanvas(options) {
-		this._bufferSize = options.bufferSize;
 		this.$container = options.container;
 		this.debug = options.debug;
 		this.log = options.log;
@@ -33,7 +32,7 @@
 		this.redrawBacklog = [];
 	}
 	
-	RakkaRendererCanvas.prototype.resize = function(width, height) {
+	RakkaRendererCanvas.prototype.resize = function(width, height, bufferHeight) {
 		this.width = width;
 		this.height = height;
 		
@@ -45,8 +44,7 @@
 		this.log('Canvas Dimensions', this.width, this.height);
 		
 		this.circWidth = this.width;
-		// @todo maybe calculate this based on nColumns and expected image aspect ratio
-		this.circHeight = this.height * this._bufferSize;
+		this.circHeight = bufferHeight;
 		this.$circCanvas
 			.width(this.circWidth)
 			.height(this.circHeight)
