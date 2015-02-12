@@ -34,14 +34,17 @@
 		// Setup container
 		this.$container = options.container;
 		this.$container.addClass('rakka-container')
-			.addClass('rakka-no-auto-hide')
-			.on('themeChange', this.onThemeChange.bind(this));
-		this.onThemeChange(null, this.theme);
+			.addClass('rakka-no-auto-hide');
+		this.onThemeChange(this.theme);
 		
+		// Setup events
+		this.bus.proxy(this);
+		this.on('rakka.ui.theme.change', this.onThemeChange.bind(this));
+		
+		// Setup components
 		function makeOpts(opts) {
 			return $.extend({
 				bus: options.bus,
-				rakka: options.rakka,
 				container: options.container,
 				theme: options.theme
 			}, typeof opts === 'object' ? opts : {});
@@ -115,7 +118,7 @@
 		}
 	};
 	
-	RakkaUI.prototype.onThemeChange = function(event, theme) {
+	RakkaUI.prototype.onThemeChange = function(theme) {
 		if( this.theme ) {
 			this.$container.removeClass('rakka-theme-' + this.theme);
 		}

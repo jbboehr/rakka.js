@@ -29,7 +29,7 @@
 	};
 
 	Column.prototype.resize = function(width, height) {
-		this.newHeightFactor = height / this.height;
+		this.newHeightFactor = (this.height ? height / this.height : null);
 		this.width = width;
 		this.height = height;
 		this.offset = this.index * this.width;

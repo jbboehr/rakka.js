@@ -78,15 +78,18 @@
 		this.imagesConsumed = 0;
 		
 		// Setup columns
-		this.columns = [];
+		this._columns = [];
+		this.columns(this.nColumns);
+		/*
 		for( var i = 0; i < this.nColumns; i++ ) {
-			this.columns[i] = new Column({
+			this._columns[i] = new Column({
 				bus : this.bus,
 				consume : this.consume,
 				index : i,
 				log : this.log
 			});
 		}
+		*/
 		
 		// Resize
 		this.resize();
@@ -166,8 +169,8 @@
 		if( this._direction === -1 ) {
 			return;
 		}
-		for( var i = 0, l = this.columns.length; i < l ; i++ ) {
-			var col = this.columns[i];
+		for( var i = 0, l = this._columns.length; i < l ; i++ ) {
+			var col = this._columns[i];
 			var newImages = col.fill(this.cursor, this.circCount);
 			if( newImages === false ) {
 				this.incrCursorOkay = false;
@@ -206,8 +209,8 @@
 	Rakka.prototype.draw = function() {
 		// Pull everything out that needs a redraw
 		var redraws = [];
-		for( var x in this.columns ) {
-			var column = this.columns[x];
+		for( var x in this._columns ) {
+			var column = this._columns[x];
 			for( var i = 0, l = column.redraws.length; i < l; i++ ) {
 				redraws.push(column.redraws[i]);
 			}
@@ -229,6 +232,40 @@
 			this.resize();
 			return this;
 		}
+	};
+	
+	Rakka.prototype.columns = function(columns) {
+		this.nColumns = columns;
+		
+		var l = this._columns.length;
+		if( columns > l ) {
+			// Add new columns (to the right)
+			var i = columns - l;
+			while(i--) {
+				var column = new Column({
+					bus : this.bus,
+					consume : this.consume,
+					index : this._columns.length,
+					log : this.log
+				});
+				this._columns.push(column);
+				this.trigger('rakka.column.new', column);
+			}
+		} else if( columns < l ) {
+			// Remove columns (from the right)
+			var i = l - columns;
+			while(i--) {
+				var column = this._columns.pop();
+				// @todo maybe put the images back into the preload cache?
+				// @todo remove from ui-list
+				this.bus.detach(column);
+				this.trigger('rakka.column.remove', column);
+			}
+		} else {
+			return this;
+		}
+		this.resize();
+		return this;
 	};
 	
 	Rakka.prototype.direction = function(direction) {
@@ -281,7 +318,7 @@
 		this.bufferHeight = this.height * this._bufferSize;
 		
 		// Calc column width
-		this.columnWidth = Math.floor(this.width / this.nColumns);
+		this.columnWidth = Math.floor(this.width / this._columns.length);
 		
 		// Resize generator (for mirror)
 		this.generator.resize(this.columnWidth, this.height);
@@ -292,8 +329,8 @@
 		}
 		
 		// Resize the columns
-		for( var i = 0; i < this.columns.length; i++ ) {
-			this.columns[i].resize(this.columnWidth, this.bufferHeight);
+		for( var i = 0; i < this._columns.length; i++ ) {
+			this._columns[i].resize(this.columnWidth, this.bufferHeight);
 		}
 		
 		// Resize renderer

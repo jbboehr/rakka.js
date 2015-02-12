@@ -12,7 +12,6 @@
 }(function($) {
 	
 	function RakkaUIList(options) {
-		this.rakka = options.rakka;
 		this.$container = options.container;
 		
 		// Setup bus
@@ -26,19 +25,26 @@
 		this.listItems = {};
 		this.lists = [];
 		
-		// Setup columns?
-		for( var i = 1; i <= this.rakka.nColumns; i++ ) {
-			this.lists.push($('<ul>').attr('data-index', '' + i).appendTo(this.$element));
-		}
-		
 		// Bind events
 		this.bind();
 	};
 	
 	RakkaUIList.prototype.bind = function() {
+		this.on('rakka.column.new', this.onColumnNew.bind(this));
+		this.on('rakka.column.remove', this.onColumnRemove.bind(this));
 		this.on('rakka.image.gc', this.onImageGc.bind(this));
 		this.on('rakka.image.new', this.onImageNew.bind(this));
-		//this.rakka.on('fill', this.onFill.bind(this));
+	};
+	
+	RakkaUIList.prototype.onColumnNew = function(column) {
+		this.lists[column.index] = $('<ul>').attr('data-index', column.index).appendTo(this.$element);
+	};
+	
+	RakkaUIList.prototype.onColumnRemove = function(column) {
+		if( column.index in this.lists ) {
+			this.lists[column.index].remove();
+			delete this.lists[column.index];
+		}
 	};
 	
 	RakkaUIList.prototype.onImageGc = function(image) {
@@ -72,9 +78,6 @@
 			.attr('id', 'rakka-img-info-' + image.index)
 			.appendTo(listItem);
 		this.listItems[image.index] = listItem;
-	};
-	
-	RakkaUIList.prototype.onFill = function(payload) {
 	};
 	
 	

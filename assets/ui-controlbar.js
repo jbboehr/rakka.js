@@ -215,7 +215,7 @@
 	};
 	
 	RakkaUIControlBar.prototype.onThemeChange = function(event) {
-		this.$container.trigger('themeChange', $(event.target).val());
+		this.trigger('rakka.ui.theme.change', $(event.target).val());
 	};
 	
 	RakkaUIControlBar.prototype.speedWithFactor = function(delta) {

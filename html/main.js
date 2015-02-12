@@ -20,6 +20,7 @@ requirejs.config({
 requirejs([
 	'jquery',
 	'rakka',
+	'rakka/bus',
 	'rakka/ui',
 	'rakka/generator-reddit',
 	'rakka/generator-vidme',
@@ -27,6 +28,7 @@ requirejs([
 ], function(
 	$,
 	Rakka,
+	RakkaBus,
 	RakkaUI,
 	RakkaRedditGenerator,
 	RakkaVidmeGenerator
@@ -54,23 +56,23 @@ requirejs([
 		$('.static-modal-wrapper').remove();
 		$('#container').removeClass('hide');
 		
-		/*var*/ 
-		/*var*/ rakka = new Rakka({
-			bufferSize : bufferSize,
-			columns : nColumns,
-			container : $('#container'),
-			generator : generator,
-			speed : 100,
-			debug : false
-		});
-		/* ui */ ui = new RakkaUI({
-			bus: rakka.bus,
-			rakka: rakka,
+		/*var*/ bus = new RakkaBus();
+		/*var*/ ui = new RakkaUI({
+			bus: bus,
 			container: $('body'),
 			controlBar: true,
 			list: true,
 			stats: true,
 			theme: 'dark'
+		});
+		/*var*/ rakka = new Rakka({
+			bufferSize : bufferSize,
+			bus: bus,
+			columns : nColumns,
+			container : $('#container'),
+			generator : generator,
+			speed : 100,
+			debug : false
 		});
 		$(window).on('resize', function() {
 			rakka.resize();

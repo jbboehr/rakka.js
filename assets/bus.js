@@ -11,23 +11,25 @@
 		this._events = {};
 	}
 	
-	Bus.prototype.on = function(name, cb) {
+	Bus.prototype.on = function(name, cb, ctx) {
 		if( !(name in this._events) ) {
 			this._events[name] = [];
 		}
 		this._events[name].push({
-			cb : cb
+			cb : cb,
+			ctx : ctx
 		});
 		return this;
 	};
 	
-	Bus.prototype.one = function(name, cb) {
+	Bus.prototype.one = function(name, cb, ctx) {
 		if( !(name in this._events) ) {
 			this._events[name] = [];
 		}
 		this._events[name].push({
-			once : true,
-			cb : cb
+			cb : cb,
+			ctx : ctx,
+			once : true
 		});
 		return this;
 	};
@@ -94,10 +96,32 @@
 	};
 	
 	Bus.prototype.proxy = function(object) {
-		object.on = this.on.bind(this);
-		object.one = this.one.bind(this);
+		object.on = function(name, cb) {
+			this.on(name, cb, object);
+		}.bind(this);
+		object.one = function(name, cb) {
+			this.one(name, cb, object);
+		}.bind(this);
 		object.off = this.off.bind(this);
 		object.trigger = this.trigger.bind(this);
+		return this;
+	};
+	
+	Bus.prototype.detach = function(object) {
+		// @todo maybe replace with an empty function
+		delete object.on;
+		delete object.one;
+		delete object.off;
+		delete object.trigger;
+		for( var x in this._events ) {
+			var i = this._events[x].length;
+			while( i-- ) {
+				ev = this._events[x][i];
+				if( ev.ctx === object ) {
+					this._events[x].splice(i, 1);
+				}
+			}
+		}
 		return this;
 	};
 	
