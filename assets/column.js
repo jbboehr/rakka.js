@@ -27,7 +27,19 @@
 			this.resize(options.width, options.height);
 		}
 	};
-
+	
+	Column.prototype.getImageAtPosition = function(y, circCount) {
+		for( var i = this.images.length - 1; i >= 0; i-- ) {
+			var image = this.images[i];
+			var yf = (y + circCount * this.height);
+			var ic1 = (image.cursor + image.circCount * this.height);
+			var ic2 = (image.nextCursor + image.nextCircCount * this.height);
+			if( yf >= ic1 && yf <= ic2 ) {
+				return image;
+			}
+		}
+	};
+	
 	Column.prototype.resize = function(width, height) {
 		this.newHeightFactor = (this.height ? height / this.height : null);
 		this.width = width;

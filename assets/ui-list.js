@@ -34,6 +34,7 @@
 		this.on('rakka.column.remove', this.onColumnRemove.bind(this));
 		this.on('rakka.image.gc', this.onImageGc.bind(this));
 		this.on('rakka.image.new', this.onImageNew.bind(this));
+		this.on('rakka.image.click', this.onImageClick.bind(this));
 	};
 	
 	RakkaUIList.prototype.onColumnNew = function(column) {
@@ -78,6 +79,17 @@
 			.attr('id', 'rakka-img-info-' + image.index)
 			.appendTo(listItem);
 		this.listItems[image.index] = listItem;
+	};
+	
+	RakkaUIList.prototype.onImageClick = function(image) {
+		if( !(image.index in this.listItems) ) {
+			return;
+		}
+		var listItem = this.listItems[image.index];
+		var link = listItem.find('a');
+		window.open(link.attr('href'));
+		// requestAnimationLoop should probably work
+		//this.trigger('rakka.stop');
 	};
 	
 	

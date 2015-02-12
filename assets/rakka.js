@@ -80,16 +80,6 @@
 		// Setup columns
 		this._columns = [];
 		this.columns(this.nColumns);
-		/*
-		for( var i = 0; i < this.nColumns; i++ ) {
-			this._columns[i] = new Column({
-				bus : this.bus,
-				consume : this.consume,
-				index : i,
-				log : this.log
-			});
-		}
-		*/
 		
 		// Resize
 		this.resize();
@@ -126,6 +116,24 @@
 			};
 			self.trigger('rakka.stats', stats);
 		});
+		
+		this.$container.on('click', function(event) {
+			var absY = this.cursor - (this.height - event.offsetY);
+			var image = this.getImageAtPosition(event.offsetX, absY);
+			if( image ) {
+				this.trigger('rakka.image.click', image);
+			}
+		}.bind(this));
+	};
+	
+	Rakka.prototype.getImageAtPosition = function(x, y) {
+		for( var i = 0, l = this._columns.length; i < l ; i++ ) {
+			var col = this._columns[i];
+			if( col.offset > x || col.offset + col.width < x ) {
+				continue;
+			}
+			return col.getImageAtPosition(y, this.circCount);
+		}
 	};
 	
 	
