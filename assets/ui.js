@@ -109,7 +109,7 @@
 		this.userActive(true);
 		
 		clearTimeout(this._inactivityTimeout);
-		this._inactivityTimeout = setTimeout(this.listenTimeout.bind(this), 2000);
+		this._inactivityTimeout = setTimeout(this.listenTimeout.bind(this), 5000);
 	};
 	
 	RakkaUI.prototype.listenTimeout = function() {

@@ -5,15 +5,15 @@
 	display: block;
 	visibility: visible;
 	opacity: 1;
-	-webkit-transition: visibility 0.1s, opacity 0.1s;
-	   -moz-transition: visibility 0.1s, opacity 0.1s;
-	     -o-transition: visibility 0.1s, opacity 0.1s;
-		    transition: visibility 0.1s, opacity 0.1s;
+	-webkit-transition: visibility 1.0s, opacity 1.0s;
+	   -moz-transition: visibility 1.0s, opacity 1.0s;
+	     -o-transition: visibility 1.0s, opacity 1.0s;
+		    transition: visibility 1.0s, opacity 1.0s;
 }
 
 .rakka-user-inactive .rakka-ui-component {
 	display: block;
-	visibility: hidden;
+	visibility: visible;
 	opacity: 0;
 	-webkit-transition: visibility 1.0s, opacity 1.0s;
 	   -moz-transition: visibility 1.0s, opacity 1.0s;
@@ -56,6 +56,26 @@
 	border-bottom: 1px solid #ccc;
 	background-color: rgba(255, 255, 255, 0.75);
 	z-index: 10;
+}
+
+.rakka-user-active .rakka-ui-controlbar {
+	top: 0px;
+	-webkit-transition: visibility 1.0s, opacity 1.0s, top 1.0s;
+	   -moz-transition: visibility 1.0s, opacity 1.0s, top 1.0s;
+	     -o-transition: visibility 1.0s, opacity 1.0s, top 1.0s;
+		    transition: visibility 1.0s, opacity 1.0s, top 1.0s;
+}
+
+.rakka-user-inactive .rakka-ui-controlbar {
+	top: -50px;
+	-webkit-transition: visibility 1.0s, opacity 1.0s, top 1.0s;
+	   -moz-transition: visibility 1.0s, opacity 1.0s, top 1.0s;
+	     -o-transition: visibility 1.0s, opacity 1.0s, top 1.0s;
+		    transition: visibility 1.0s, opacity 1.0s, top 1.0s;
+}
+
+.rakka-no-auto-hide .rakka-ui-controlbar {
+	top: 0px;
 }
 
 .rakka-theme-dark .rakka-ui-controlbar {
@@ -114,11 +134,33 @@
 	border-left: 0;
 	border-bottom: 0;
 	background-color: rgba(255, 255, 255, 0.7);
+	max-height: 400px;
 }
 
 .rakka-theme-dark .rakka-ui-stats {
 	background-color: rgba(68, 68, 68, 0.75);
 	border-color: #080808;
+}
+
+.rakka-user-active .rakka-ui-stats {
+	bottom: 0px;
+	-webkit-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+	   -moz-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+	     -o-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+		    transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+}
+
+.rakka-user-inactive .rakka-ui-stats {
+	/*bottom: -400px;*/
+	bottom: -2000px;
+	-webkit-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+	   -moz-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+	     -o-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+		    transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+}
+
+.rakka-no-auto-hide .rakka-ui-stats {
+	bottom: 0px;
 }
 
 .rakka-ui-stats > * {
@@ -144,6 +186,26 @@
 .rakka-theme-dark .rakka-ui-list {
 	background-color: rgba(68, 68, 68, 0.75);
 	border-color: #080808;
+}
+
+.rakka-user-active .rakka-ui-list {
+	bottom: 0px;
+	-webkit-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+	   -moz-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+	     -o-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+		    transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+}
+
+.rakka-user-inactive .rakka-ui-list {
+	bottom: -2000px;
+	-webkit-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+	   -moz-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+	     -o-transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+		    transition: visibility 1.0s, opacity 1.0s, bottom 1.0s;
+}
+
+.rakka-no-auto-hide .rakka-ui-list {
+	bottom: 0px;
 }
 
 .rakka-ui-list > ul {

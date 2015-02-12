@@ -74,14 +74,6 @@
 			.on('click', this.onOptionsClick.bind(this))
 			.appendTo(this.$element);
 		
-		this.$autoHide = $('<button>')
-			.attr('class', 'btn btn-info')
-			.attr('data-action', 'auto-hide')
-			.attr('data-state', 'off')
-			.text('Hide controls')
-			.on('click', this.onAutoHideClick.bind(this))
-			.appendTo(this.$element);
-			
 		this.$theme = $('<select>')
 			.attr('class', 'form-control')
 			.attr('data-action', 'change-theme')
@@ -105,6 +97,8 @@
 		}).on('input', 'input[name="bufferSize"]', function(event) {
 			var el = $(event.target);
 			el.parent().find('.input-group-addon').text(el.val() + 'x');
+		}).on('change', 'input[name="controls"]', function(event) {
+			self.onAutoHideClick(event);
 		});
 	};
 	
@@ -195,7 +189,7 @@
 				this.trigger('rakka.toggle');
 				break;
 			case 72: // h
-				this.onAutoHideClick(event);
+				this.onAutoHideClick(/*event*/);
 				break;
 			case 80: // p
 				this.trigger('rakka.toggle');
@@ -225,14 +219,19 @@
 	};
 	
 	RakkaUIControlBar.prototype.onAutoHideClick = function(event) {
-		if( this.$autoHide.attr('data-state') === 'off' ) {
-			this.$container.removeClass('rakka-no-auto-hide');
-			this.$autoHide.attr('data-state', 'on')
-				.text('Show controls');
-		} else {
+		var action = (event && $(event.target).val()) || (this.$container.hasClass('rakka-no-auto-hide') ? 'hide' : 'show');
+		if( action === 'show' ) {
 			this.$container.addClass('rakka-no-auto-hide');
-			this.$autoHide.attr('data-state', 'off')
-				.text('Hide controls');
+			if( !event ) {
+				this.$modal.find('input[name="controls"][value="show"]').prop('checked', true).parent().addClass('active');
+				this.$modal.find('input[name="controls"][value="hide"]').prop('checked', false).parent().removeClass('active');
+			}
+		} else {
+			this.$container.removeClass('rakka-no-auto-hide');
+			if( !event ) {
+				this.$modal.find('input[name="controls"][value="hide"]').prop('checked', true).parent().addClass('active');
+				this.$modal.find('input[name="controls"][value="show"]').prop('checked', false).parent().removeClass('active');
+			}
 		}
 	};
 	
@@ -317,6 +316,24 @@
 				'<div class="input-group">' +
 					'<div class="input-group-addon">' + bufferSize + 'x</div>' +
 					'<input type="range" id="rakkaUiOptionsBufferSize" name="bufferSize" min="2" max="16" value="' + bufferSize + '" class="form-control" />' +
+				'</div>' +
+			'</div>';
+		
+		// Controls
+		html +=
+			'<div class="form-group">' +
+				'<label>Controls:</label>' +
+				'<div class="input-group">' +
+					'<div class="btn-group" data-toggle="buttons">' +
+					'<label class="btn btn-default active">' +
+					'<input type="radio" name="controls" id="rakkaUiOptionsControlsShow" autocomplete="off" value="show" checked>' +
+					'Always Show' +
+					'</label>' +
+					'<label class="btn btn-default">' +
+					'<input type="radio" name="controls" id="rakkaUiOptionsControlsHide" autocomplete="off" value="hide" checked>' +
+					'Auto-Hide' +
+					'</label>' +
+					'</div>' +
 				'</div>' +
 			'</div>';
 		
