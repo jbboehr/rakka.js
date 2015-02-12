@@ -67,6 +67,13 @@
 			.on('input', this.onSpeedChange.bind(this))
 			.appendTo(this.$element);
 		
+		this.$options = $('<button>')
+			.attr('class', 'btn btn-info')
+			.attr('data-action', 'options')
+			.text('Options')
+			.on('click', this.onOptionsClick.bind(this))
+			.appendTo(this.$element);
+		
 		this.$autoHide = $('<button>')
 			.attr('class', 'btn btn-info')
 			.attr('data-action', 'auto-hide')
@@ -84,6 +91,21 @@
 			.on('change', this.onThemeChange.bind(this))
 			.val('' + this.theme)
 			.appendTo(this.$element);
+		
+		var self = this;
+		this.$modal = $(generateModal({
+			
+		})).on('change', 'input[name="columns"]', function() {
+			self.trigger('rakka.setColumns', $(this).val());
+		}).on('change', 'input[name="bufferSize"]', function() {
+			self.trigger('rakka.setBufferSize', $(this).val());
+		}).on('input', 'input[name="columns"]', function(event) {
+			var el = $(event.target);
+			el.parent().find('.input-group-addon').text(el.val());
+		}).on('input', 'input[name="bufferSize"]', function(event) {
+			var el = $(event.target);
+			el.parent().find('.input-group-addon').text(el.val() + 'x');
+		});
 	};
 	
 	RakkaUIControlBar.prototype.bind = function() {
@@ -214,6 +236,10 @@
 		}
 	};
 	
+	RakkaUIControlBar.prototype.onOptionsClick = function(event) {
+		this.$modal.modal('show');
+	};
+	
 	RakkaUIControlBar.prototype.onThemeChange = function(event) {
 		this.trigger('rakka.ui.theme.change', $(event.target).val());
 	};
@@ -260,6 +286,46 @@
 		  document.webkitExitFullscreen();
 		}
 	  }
+	}
+	
+	function generateModal(options) {
+		var html = '';
+		var bufferSize = (options && options.bufferSize || 4);
+		var columns = (options && options.columns || 3);
+		
+		html += '<div class="modal fade"><div class="modal-dialog"><div class="modal-content">';
+		html += '<div class="modal-header">' + 
+				'<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+				'<h4 class="modal-title">Options</h4>' + 
+			'</div>';
+		html += '<div class="modal-body">';
+		
+		// Columns
+		html += 
+			'<div class="form-group">' +
+				'<label for="rakkaUiOptionsColumns">Columns:</label>' +
+				'<div class="input-group">' +
+					'<div class="input-group-addon">' + columns + '</div>' +
+					'<input type="range" id="rakkaUiOptionsColumns" name="columns" min="1" max="12" value="' + columns + '" class="form-control" />' +
+				'</div>' +
+			'</div>';
+		
+		// Buffer Size
+		html +=
+			'<div class="form-group">' +
+				'<label for="rakkaUiOptionsBufferSize">Buffer Size:</label>' +
+				'<div class="input-group">' +
+					'<div class="input-group-addon">' + bufferSize + 'x</div>' +
+					'<input type="range" id="rakkaUiOptionsBufferSize" name="bufferSize" min="2" max="16" value="' + bufferSize + '" class="form-control" />' +
+				'</div>' +
+			'</div>';
+		
+		// Theme
+		
+		html += '</div>'; // modal-body
+		html += '<div class="modal-footer"><button type="button" class="btn btn-primary" data-dismiss="modal">Close</button></div>';
+		html += '</div></div></div>'; // modal-content modal-dialog modal
+		return html;
 	}
 	
 	

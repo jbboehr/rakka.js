@@ -27,7 +27,7 @@
 		// Setup options
 		this._bufferSize = (options && options.bufferSize) || 4;
 		this.debug = (options && options.debug) || false;
-		this.nColumns = (options && options.columns) || 6;
+		this.nColumns = (options && options.columns) || 3;
 		this._speed = (options && options.speed) || 500;
 		
 		this.$container = options.container;
@@ -105,6 +105,9 @@
 		this.on('rakka.direction.toggle', this.directionToggle.bind(this));
 		this.on('rakka.speed.change', this.speed.bind(this));
 		
+		this.on('rakka.setBufferSize', this.bufferSize.bind(this));
+		this.on('rakka.setColumns', this.columns.bind(this));
+		
 		this.on('rakka.speed.emit', function() {
 			self.trigger('rakka.speed.changed', self._speed);
 		});
@@ -145,16 +148,20 @@
 		}
 		if( this.lastTs ) {
 			this.deltaTs = ts - this.lastTs;
-			
-			// Frames per second
-			var smoothFactor = 0.2
-			this.fps = 1000 / this.deltaTs;
-			this.fpsSmooth = smoothFactor * this.fps + (1 - smoothFactor) * this.fpsSmooth;
-			//(this.fps * 2 + (this.fpsSmooth || this.fps)) / 3;
 		} else {
 			this.deltaTs = 0;
 		}
 		this.lastTs = ts;
+		
+		// If deltaTs is larger than a second, abort otherwise it gets jumpy
+		if( this.deltaTs > 1000 || this.deltaTs <= 0 ) {
+			return;
+		}
+		
+		// Frames per second
+		var smoothFactor = 0.2
+		this.fps = 1000 / this.deltaTs;
+		this.fpsSmooth = smoothFactor * this.fps + (1 - smoothFactor) * this.fpsSmooth;
 		
 		// Delta pixels
 		this.deltaPixelsFloat = this._direction * this.deltaTs * this._speed / 1000;

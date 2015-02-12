@@ -49,9 +49,6 @@ requirejs([
 		mirrorUrl = 'http://localhost:3000/mirror';
 	}
 	
-	var nColumns = 3;
-	var bufferSize = 4;
-	
 	function start(generator) {
 		$('.static-modal-wrapper').remove();
 		$('#container').removeClass('hide');
@@ -66,9 +63,7 @@ requirejs([
 			theme: 'dark'
 		});
 		/*var*/ rakka = new Rakka({
-			bufferSize : bufferSize,
 			bus: bus,
-			columns : nColumns,
 			container : $('#container'),
 			generator : generator,
 			speed : 100,
@@ -97,8 +92,6 @@ requirejs([
 	
 	function onReady() {
 		$(document).one('click', '.js-reddit-configure .js-example-start', function() {
-			nColumns = parseInt($('.js-reddit-configure input[name="columns"]').val()) || 3;
-			bufferSize = parseInt($('.js-vidme-configure input[name="bufferSize"]').val()) || 4;
 			/*var*/ generator = new RakkaRedditGenerator({
 				mirror: mirrorUrl,
 				subreddit: $('#subreddit').val(),
@@ -108,22 +101,10 @@ requirejs([
 		});
 		
 		$(document).one('click', '.js-vidme-configure .js-example-start', function() {
-			nColumns = parseInt($('.js-vidme-configure input[name="columns"]').val()) || 3;
-			bufferSize = parseInt($('.js-vidme-configure input[name="bufferSize"]').val()) || 4;
 			/*var*/ generator = new RakkaVidmeGenerator({
 				mirror: mirrorUrl
 			});
 			start(generator);
-		});
-		
-		$(document).on('input', 'input[name="columns"]', function(event) {
-			var el = $(event.target);
-			el.parent().find('.input-group-addon').text(el.val());
-		});
-		
-		$(document).on('input', 'input[name="bufferSize"]', function(event) {
-			var el = $(event.target);
-			el.parent().find('.input-group-addon').text(el.val() + 'x');
 		});
 		
 		$(document).on('click', '.js-source-select', function(event) {
