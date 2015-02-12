@@ -1,9 +1,6 @@
 # 落花.js
 
-
-## Demos
-
-[vidme](https://jbboehr.github.io/rakka.js/examples/vidme.html)
+[demo](https://jbboehr.github.io/rakka.js/html/index.html)
 
 
 ## License

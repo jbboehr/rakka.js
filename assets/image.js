@@ -7,7 +7,7 @@
     }
 }(function($) {
 	
-	var RakkaImage = function(img, extra, index, width) {
+	var RakkaImage = function(img, extra, index) {
 		this.img = img;
 		this.extra = extra;
 		this.label = extra && extra.label || undefined;
@@ -15,14 +15,35 @@
 		this.index = index;
 		this.originalWidth = img.width;
 		this.originalHeight = img.height;
-		if( width ) {
-			this.resize(width);
-		}
 	};
 
-	RakkaImage.prototype.resize = function(width) {
-		this.width = width;
-		this.height = Math.round(this.originalHeight * width / this.originalWidth);
+	RakkaImage.prototype.resize = function(columnWidth, columnHeight) {
+		this.columnWidth = columnWidth;
+		this.columnHeight = columnHeight;
+		this.width = columnWidth;
+		this.height = Math.round(this.originalHeight * columnWidth / this.originalWidth);
+	};
+	
+	RakkaImage.prototype.reposition = function(offset, cursor, circCount) {
+		this.offset = offset;
+		
+		// Calculate and assign the cursor
+		this.cursor = cursor;
+		this.circCount = circCount;
+		
+		if( this.cursor < 0 ) {
+			this.cursor += this.columnHeight;
+			this.circCount--;
+		}
+		
+		// Calculate and assign the next cursor
+		this.nextCursor = this.cursor + this.height;
+		this.nextCircCount = this.circCount;
+		
+		if( this.nextCursor >= this.columnHeight ) {
+			this.nextCursor -= this.columnHeight;
+			this.nextCircCount++;
+		}
 	};
 	
 	

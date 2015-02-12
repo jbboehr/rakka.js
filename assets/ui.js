@@ -21,6 +21,9 @@
 		var subopts;
 		var theme;
 		
+		// Setup events
+		this.bus = options.bus;
+		
 		// Setup main options
 		if( options && -1 !== ['none', 'light', 'dark'].indexOf(options.theme) ) {
 			this.theme = options.theme;
@@ -31,13 +34,17 @@
 		// Setup container
 		this.$container = options.container;
 		this.$container.addClass('rakka-container')
-			.addClass('rakka-no-auto-hide')
-			.on('themeChange', this.onThemeChange.bind(this));
-		this.onThemeChange(null, this.theme);
+			.addClass('rakka-no-auto-hide');
+		this.onThemeChange(this.theme);
 		
+		// Setup events
+		this.bus.proxy(this);
+		this.on('rakka.ui.theme.change', this.onThemeChange.bind(this));
+		
+		// Setup components
 		function makeOpts(opts) {
 			return $.extend({
-				rakka: options.rakka,
+				bus: options.bus,
 				container: options.container,
 				theme: options.theme
 			}, typeof opts === 'object' ? opts : {});
@@ -102,7 +109,7 @@
 		this.userActive(true);
 		
 		clearTimeout(this._inactivityTimeout);
-		this._inactivityTimeout = setTimeout(this.listenTimeout.bind(this), 2000);
+		this._inactivityTimeout = setTimeout(this.listenTimeout.bind(this), 5000);
 	};
 	
 	RakkaUI.prototype.listenTimeout = function() {
@@ -111,7 +118,7 @@
 		}
 	};
 	
-	RakkaUI.prototype.onThemeChange = function(event, theme) {
+	RakkaUI.prototype.onThemeChange = function(theme) {
 		if( this.theme ) {
 			this.$container.removeClass('rakka-theme-' + this.theme);
 		}
@@ -127,15 +134,7 @@
 		}
 		
 		// Propogate
-		if( this.controlBar ) {
-			this.controlBar.userActive(state);
-		}
-		if( this.list ) {
-			this.list.userActive(state);
-		}
-		if( this.stats ) {
-			this.stats.userActive(state);
-		}
+		this.bus.trigger('rakka.ui.userActive', state);
 	};
 	
 	

@@ -76,8 +76,11 @@
 				}
 				src = listing.url;
 			}
-			listing.label = listing.title;
-			self.loadImage(src, listing);
+			self.loadImage(src, {
+				label: listing.title,
+				url: 'https://www.reddit.com' + listing.permalink,
+				listing: listing
+			});
 		};
 		
 		$.ajax({
