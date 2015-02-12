@@ -379,31 +379,36 @@
 	
 	
 	// requestAnimationFrame polyfill
-	// https://gist.github.com/paulirish/1579671
+	// Based on: https://gist.github.com/paulirish/1579671
+	var requestAnimationFrame = window.requestAnimationFrame;
+	var cancelAnimationFrame = window.cancelAnimationFrame;
 	(function() {
 		var lastTime = 0;
 		var vendors = ['ms', 'moz', 'webkit', 'o'];
-		for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
-			window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
-			window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] 
+		for(var x = 0; x < vendors.length && !requestAnimationFrame; ++x) {
+			requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+			cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] 
 									   || window[vendors[x]+'CancelRequestAnimationFrame'];
 		}
 	 
-		if( !window.requestAnimationFrame ) {
-			window.requestAnimationFrame = function(callback, element) {
+		if( !requestAnimationFrame ) {
+			var timeToCallDelta = 0;
+			var timeToCallTarget = 1000 / 60;
+			requestAnimationFrame = function(callback, element) {
 				var currTime = Date.now();
-				var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+				var timeToCall = Math.max(0, Math.round(16 - (currTime - lastTime) + timeToCallDelta));
 				var id = window.setTimeout(function() {
 					lastTime = Date.now();
-					callback(lastTime/*currTime + timeToCall*/);
+					var timeToCallActual = lastTime - currTime;
+					timeToCallDelta += (timeToCallTarget - timeToCallActual);
+					callback(lastTime);
 				}, timeToCall);
-				//lastTime = currTime + timeToCall;
 				return id;
 			};
 		}
 	 
-		if( !window.cancelAnimationFrame ) {
-			window.cancelAnimationFrame = function(id) {
+		if( !cancelAnimationFrame ) {
+			cancelAnimationFrame = function(id) {
 				lastTime = 0;
 				clearTimeout(id);
 			};
