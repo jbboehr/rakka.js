@@ -74,9 +74,11 @@
 	
 	
 	// URL compat
-	var createObjectURL = bindToWindow(window.URL && window.createObjectURL || function() {});
-	var revokeObjectURL = bindToWindow(window.URL && window.revokeObjectURL || function() {});
-	
+	var createObjectURL = bindToWindow(window.URL && window.URL.createObjectURL || function() {});
+	var revokeObjectURL = bindToWindow(window.URL && window.URL.revokeObjectURL || function() {});
+	function isCreateObjectUrlSupported() {
+		return (window.URL && window.URL.createObjectURL ? true : false);
+	}
 	
 	
 	
@@ -87,7 +89,8 @@
 		requestAnimationFrame: requestAnimationFrame,
 		cancelAnimationFrame: cancelAnimationFrame,
 		createObjectURL: createObjectURL,
-		revokeObjectURL: revokeObjectURL
+		revokeObjectURL: revokeObjectURL,
+		isCreateObjectUrlSupported: isCreateObjectUrlSupported
 	};
 	window.RakkaUtils = RakkaUtils;
 	return RakkaUtils;

@@ -78,6 +78,9 @@
 			.attr('target', '_blank')
 			.attr('id', 'rakka-img-info-' + image.index)
 			.appendTo(listItem);
+		if( image.extra && image.extra.onlistclick ) {
+			link.on('click', image.extra.onlistclick);
+		}
 		this.listItems[image.index] = listItem;
 	};
 	
