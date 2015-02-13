@@ -64,7 +64,7 @@
 		function done(event) {
 			self.semaphore--;
 			if( event.type === 'load' ) {
-				self.addImage(this, extra);
+				self.addImage(img, extra);
 			}
 		};
 		

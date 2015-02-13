@@ -4,16 +4,18 @@
         define([
 			'jquery',
 			'./image',
-			'./generator'
+			'./generator',
+			'./utils'
 		], factory);
     } else {
         factory(
 			window.jQuery,
 			window.RakkaImage,
-			window.RakkaGenerator
+			window.RakkaGenerator,
+			window.RakkaUtils
 		);
     }
-}(function($, Image, Generator) {
+}(function($, Image, Generator, Utils) {
 	
 	var defaultParams = {
 		order : 'video_id',
@@ -25,7 +27,8 @@
 	};
 	
 	var FilesGenerator = function(options) {
-		this.init(options);
+		Generator.prototype.constructor.call(this, options);
+		
 		this.fileList = options.files;
 		this.cursor = 0;
 		this.files = [];
@@ -34,7 +37,12 @@
 		}
 	};
 	
-	FilesGenerator.prototype = new Generator();
+	FilesGenerator.prototype = Object.create(Generator.prototype);
+	
+	FilesGenerator.prototype.addImage = function(img, extra) {
+		this.images.push(new FilesImage(img, extra, this.imageIndex++));
+		return this;
+	};
 	
 	FilesGenerator.prototype.getBatch = function() {
 		if( this.semaphore > 0 ) {
@@ -52,15 +60,15 @@
 			};
 			self.loadImage(result, extra);
 		};
+		
 		var load = function(cursor) {
-			console.log(cursor, this.files);
 			var file = this.files[cursor];
 			if( !file ) {
 				self.semaphore--;
 				return;
 			}
-			var reader = new FileReader();
 			self.semaphore++;
+			var reader = new FileReader();
 			reader.onload = function() {
 				fn(reader.result, file);
 				self.semaphore--;
@@ -75,6 +83,22 @@
 			load(this.cursor % this.files.length);
 		}
 		self.semaphore--;
+	};
+	
+	
+	
+	function FilesImage() {
+		Image.prototype.constructor.apply(this, arguments);
+	};
+	
+	FilesImage.prototype = Object.create(Image.prototype);
+	
+	FilesImage.prototype.dispose = function() {
+		if( this.objectURL ) {
+			revokeObjectURL(this.objectURL);
+		}
+		Image.prototype.dispose.call(this);
+		return this;
 	};
 	
 	
