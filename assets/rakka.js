@@ -234,7 +234,7 @@
 			}
 			column.redraws = [];
 		}
-		this.renderer.draw(this.cursor, redraws);
+		this.renderer.draw(this.cursor, this.circCount, redraws);
 	};
 	
 	

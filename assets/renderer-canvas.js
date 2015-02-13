@@ -2,14 +2,16 @@
 (function (factory) {
     if (typeof define === 'function' && define.amd) {
         define([
-			'jquery'
+			'jquery',
+			'rakka/utils'
 		], factory);
     } else {
         factory(
-			window.jQuery
+			window.jQuery,
+			window.RakkaUtils
 		);
     }
-}(function($) {
+}(function($, Utils) {
 	
 	function RakkaRendererCanvas(options) {
 		this.$container = options.container;
@@ -21,7 +23,7 @@
 		this.$canvas = $('<canvas>').appendTo(this.$container);
 		this.$circCanvas = $('<canvas>');
 		//if( this.debug ) {
-		//	this.$circCanvas.appendTo(this.$container);
+			this.$circCanvas.appendTo(this.$container);
 		//}
 		
 		// Setup canvas contexts
@@ -30,6 +32,7 @@
 		
 		// Setup vars
 		this.redrawBacklog = [];
+		this.partialDraws = [];
 	}
 	
 	RakkaRendererCanvas.prototype.resize = function(width, height, bufferHeight) {
@@ -57,7 +60,10 @@
 		this.circCtx.fillRect(0, 0, this.circWidth, this.circHeight);
 	};
 	
-	RakkaRendererCanvas.prototype.draw = function(cursor, redraws) {
+	RakkaRendererCanvas.prototype.draw = function(cursor, circCount, redraws) {
+		this.cursor = cursor;
+		this.circCount = circCount;
+		
 		this.drawCircularBuffer(redraws);
 		this.drawMainBuffer(cursor);
 	};
@@ -77,6 +83,15 @@
 				l2--;
 			}
 		}
+		// Copy partial draws into backlog
+		var tmp;
+		while(tmp = this.partialDraws.shift()) {
+			if( !tmp ) {
+				break;
+			}
+			this.redrawBacklog.push(tmp);
+		}
+		// Add leftover redraws to the backlog
 		for( i = 0, l = redraws.length; i < l; i++ ) {
 			this.redrawBacklog.push(redraws.shift());
 		}
@@ -99,14 +114,73 @@
 	RakkaRendererCanvas.prototype.drawCircularBufferImage = function(image) {
 		var ctx = this.circCtx;
 		var circHeight = this.circHeight;
-		var needsSplit = ( image.nextCircCount > image.circCount );
+		var isAtCursor = ( Utils.circCmp(image.cursor, image.circCount, '<=', this.cursor, this.circCount) &&
+						   Utils.circCmp(image.nextCursor, image.nextCircCount, '>=', this.cursor, this.circCount) );
+		var isAtEndOfCursor = false;
 		
 		// Draw the image
-		// @todo maybe reduce the size of the copy?
-		ctx.drawImage(image.img, image.offset, image.cursor, image.width, image.height);
-		if( needsSplit ) {
-			// If it needs a split, draw to the top as well
-			ctx.drawImage(image.img, image.offset, image.cursor - circHeight, image.width, image.height);
+		var stopCursor, stopCircCount, startCursor, startCircCount;
+		if( isAtCursor ) {
+			// Draw up to the cursor
+			startCursor = (image.lastDrawCursor || image.cursor);
+			startCircCount = (image.lastDrawCircCount || image.circCount);
+			stopCursor = this.cursor;
+			stopCircCount = this.circCount;
+			if( Utils.circCmp(stopCursor, stopCircCount, '>', image.nextCursor, image.nextCircCount) ) {
+				stopCursor = image.nextCursor;
+				stopCircCount = image.nextCircCount;
+				isAtEndOfCursor = true;
+			}
+		} else {
+			return; // @todo make sure this works for full redraws T_T
+			
+			// Draw the full image
+			startCursor = image.cursor;
+			startCircCount = image.circCount;
+			stopCursor = image.nextCursor;
+			stopCircCount = image.nextCircCount;
+		}
+		
+		var needsSplit = ( stopCircCount > startCircCount );
+		var sx, sy, sw, sh, dx, dy, dw, dh;
+		dx = image.offset;
+		sx = 0;
+		dw = image.width;
+		sw = image.originalWidth;
+		
+		if( !needsSplit ) {
+			// Section 0 - full copy
+			sy = 0;
+			dy = startCursor;
+			dh = stopCursor - startCursor;
+			sh = Math.round(image.scaleFactor * dh);
+			
+			this.log('ImageSection0', sx, sy, sw, sh, dx, dy, dw, dh);
+			ctx.drawImage(image.img, sx, sy, sw, sh, dx, dy, dw, dh);
+		} else {
+			
+			// Section 1 - bottom section
+			sy = 0;
+			dh = circHeight - startCursor;
+			sh = Math.round(image.scaleFactor * dh);
+			dy = startCursor;
+			
+			this.log('ImageSection1', sx, sy, sw, sh, dx, dy, dw, dh);
+			ctx.drawImage(image.img, sx, sy, sw, sh, dx, dy, dw, dh);
+			
+			// Section 2 - top section
+			dy = 0;
+			sy = Math.round(image.scaleFactor * (circHeight - startCursor));
+			dh = stopCursor;
+			sh = image.scaleFactor * dh;
+			
+			this.log('ImageSection2', sx, sy, sw, sh, dx, dy, dw, dh);
+			ctx.drawImage(image.img, sx, sy, sw, sh, dx, dy, dw, dh);
+		}
+		
+		if( !isAtEndOfCursor ) {
+			// @todo fix if image gc'ed before finish drawing
+			this.partialDraws.push(image);
 		}
 		
 		// Draw the label

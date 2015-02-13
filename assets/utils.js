@@ -7,6 +7,43 @@
     }
 }(function($) {
 	
+	/**
+	 * Compare two circ cursors.
+	 * If cmp is not specified: 1 if A > B, -1 if A < B, or zero if A == B
+	 * If cmp is specified: true or false
+	 * 
+	 * @return Integer|Boolean
+	 */
+	function circCmp(yA, ccA, cmp, yB, ccB) {
+		if( arguments.length < 5 ) {
+			ccB = yB;
+			yB = cmp;
+			cmp = undefined;
+		}
+		var v;
+		if( ccB != ccA ) { // Compare circ
+			v = ccB > ccA ? -1 : 1;
+		} else if( yB == yA ) { // Compare cursor
+			v = 0;
+		} else {
+			v = yB > yA ? -1 : 1;
+		}
+		if( !cmp ) {
+			return v;
+		}
+		switch( cmp ) {
+			case '==': return (v === 0);
+			case '!=': return (v !== 0);
+			case '>=': return (v >= 0);
+			case '<=': return (v <= 0);
+			case '>': return (v > 0);
+			case '<': return (v < 0);
+		}
+		return v;
+	}
+	
+	
+	
 	// Bind
 	var bind = function(f, context) {
 		if( typeof context === 'string' ) {
@@ -86,6 +123,7 @@
 	var RakkaUtils = {
 		bind: bind,
 		bindToWindow: bindToWindow,
+		circCmp: circCmp,
 		requestAnimationFrame: requestAnimationFrame,
 		cancelAnimationFrame: cancelAnimationFrame,
 		createObjectURL: createObjectURL,

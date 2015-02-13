@@ -26,7 +26,8 @@
 		this.columnWidth = columnWidth;
 		this.columnHeight = columnHeight;
 		this.width = columnWidth;
-		this.height = Math.round(this.originalHeight * columnWidth / this.originalWidth);
+		this.scaleFactor = this.originalWidth / columnWidth;
+		this.height = Math.round(this.originalHeight / this.scaleFactor);
 	};
 	
 	RakkaImage.prototype.reposition = function(offset, cursor, circCount) {
