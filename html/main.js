@@ -52,12 +52,12 @@ requirejs([
 	
 	// Main
 	var fileList;
+	var bus = new RakkaBus();
 	
 	function start(generator) {
 		$('.static-modal-wrapper').remove();
 		$('#container').removeClass('hide');
 		
-		/*var*/ bus = new RakkaBus();
 		/*var*/ ui = new RakkaUI({
 			bus: bus,
 			container: $('body'),
@@ -81,6 +81,7 @@ requirejs([
 	
 	function startReddit() {
 		/*var*/ generator = new RakkaRedditGenerator({
+			bus: bus,
 			mirror: mirrorUrl,
 			subreddit: $('#subreddit').val(),
 			sort: $('#reddit-sort').val() || 'new'
@@ -90,6 +91,7 @@ requirejs([
 	
 	function startVidme() {
 		/*var*/ generator = new RakkaVidmeGenerator({
+			bus: bus,
 			mirror: mirrorUrl
 		});
 		start(generator);
@@ -97,6 +99,7 @@ requirejs([
 	
 	function startFiles() {
 		/*var*/ generator = new RakkaFilesGenerator({
+			bus: bus,
 			files: fileList
 		});
 		start(generator);

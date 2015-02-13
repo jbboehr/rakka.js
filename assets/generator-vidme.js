@@ -25,7 +25,8 @@
 	};
 	
 	var VidmeGenerator = function(options) {
-		this.init(options);
+		Generator.prototype.constructor.call(this, options);
+		
 		this.data = $.extend({}, defaultParams, options && options.data || {});
 		this.data.limit = this.batchSize;
 		if( !this.url ) {
@@ -35,7 +36,7 @@
 		this.cacheBust = 1;
 	};
 	
-	VidmeGenerator.prototype = new Generator();
+	VidmeGenerator.prototype = Object.create(Generator.prototype);
 	
 	VidmeGenerator.prototype.getBatch = function() {
 		if( this.semaphore > 0 ) {

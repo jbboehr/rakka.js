@@ -16,6 +16,11 @@
 		this.originalWidth = img.width;
 		this.originalHeight = img.height;
 	};
+	
+	RakkaImage.prototype.dispose = function() {
+		delete this.img;
+		return this;
+	};
 
 	RakkaImage.prototype.resize = function(columnWidth, columnHeight) {
 		this.columnWidth = columnWidth;

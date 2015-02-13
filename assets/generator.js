@@ -16,10 +16,6 @@
 	/* Interface for generators */
 	
 	var Generator = function(options) {
-		this.init(options);
-	};
-	
-	Generator.prototype.init = function(options) {
 		this.url = (options && options.url) || undefined;
 		this.batchSize = (options && options.batchSize) || 25;
 		this.cacheSize = (options && options.cacheSize) || 100;
@@ -28,11 +24,18 @@
 		this.images = [];
 		this.imageIndex = 0;
 		this.semaphore = 0;
+		
+		// Setup events
+		if( options.bus ) {
+			this.bus = options.bus;
+			this.bus.proxy(this);
+		}
 	};
 	
 	Generator.prototype.resize = function(columnWidth, columnHeight) {
 		this.columnWidth = columnWidth;
 		this.columnHeight = columnHeight;
+		return this;
 	}
 	
 	Generator.prototype.consume = function consume() {
@@ -48,6 +51,11 @@
 		return this.images.length;
 	};
 	
+	Generator.prototype.addImage = function(img, extra) {
+		this.images.push(new RakkaImage(img, extra, this.imageIndex++));
+		return this;
+	};
+	
 	Generator.prototype.loadImage = function loadImage(src, extra) {
 		this.semaphore++;
 		
@@ -56,7 +64,7 @@
 		function done(event) {
 			self.semaphore--;
 			if( event.type === 'load' ) {
-				self.images.push(new RakkaImage(img, extra, self.imageIndex++));
+				self.addImage(this, extra);
 			}
 		};
 		
@@ -78,6 +86,8 @@
 		img.onload = done;
 		img.onerror = done;
 		img.src = src;
+		
+		return this;
 	};
 	
 	Generator.prototype.getBatch = function() {
