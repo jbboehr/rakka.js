@@ -100,6 +100,10 @@
 		var ctx = this.circCtx;
 		var circHeight = this.circHeight;
 		var needsSplit = ( image.nextCircCount > image.circCount );
+		if( !image.img ) {
+			// this means it was disposed of
+			return;
+		}
 		
 		// Draw the image
 		// @todo maybe reduce the size of the copy?
