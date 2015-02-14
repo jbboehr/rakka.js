@@ -20,7 +20,8 @@
 	};
 	
 	var RedditGenerator = function(options) {
-		this.init(options);
+		Generator.prototype.constructor.call(this, options);
+		
 		this.data = $.extend({}, defaultParams, options && options.data || {});
 		this.data.limit = this.batchSize;
 		
@@ -39,7 +40,7 @@
 		this.lastRequestTs = 0;
 	};
 	
-	RedditGenerator.prototype = new Generator();
+	RedditGenerator.prototype = Object.create(Generator.prototype);
 	
 	RedditGenerator.prototype.getBatch = function() {
 		if( this.semaphore > 0 ) {

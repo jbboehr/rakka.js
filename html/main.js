@@ -21,16 +21,20 @@ requirejs([
 	'rakka',
 	'rakka/bus',
 	'rakka/ui',
+	'rakka/generator-files',
 	'rakka/generator-reddit',
 	'rakka/generator-vidme',
+	'./suggest',
 	'bootstrap'
 ], function(
 	$,
 	Rakka,
 	RakkaBus,
 	RakkaUI,
+	RakkaFilesGenerator,
 	RakkaRedditGenerator,
-	RakkaVidmeGenerator
+	RakkaVidmeGenerator,
+	ultraSimpleAutosuggest
 ) {
 	// Check if we're in node-webkit and try to start the mirror
 	var isNodeWebkit = typeof process === 'object' && 'versions' in process && 'node-webkit' in process.versions;
@@ -48,11 +52,15 @@ requirejs([
 		mirrorUrl = 'http://localhost:3000/mirror';
 	}
 	
+	// Main
+	var fileList;
+	var vidmeChannels;
+	var bus = new RakkaBus();
+	
 	function start(generator) {
 		$('.static-modal-wrapper').remove();
 		$('#container').removeClass('hide');
 		
-		/*var*/ bus = new RakkaBus();
 		/*var*/ ui = new RakkaUI({
 			bus: bus,
 			container: $('body'),
@@ -74,43 +82,100 @@ requirejs([
 		rakka.start();
 	}
 	
-	function startSource(source) {
-		if( source == 'vidme' ) {
-			$('.js-vidme-configure').removeClass('hide');
-			return true;
-		} else if( source == 'reddit' ) {
-			$('.js-reddit-configure').removeClass('hide');
-			return true;
-			
-		} else {
-			return;
-		}
+	function startReddit() {
+		/*var*/ generator = new RakkaRedditGenerator({
+			bus: bus,
+			mirror: mirrorUrl,
+			subreddit: $('#subreddit').val(),
+			sort: $('#redditOrder').val() || 'new'
+		});
 		start(generator);
+	}
+	
+	function startVidme() {
+		/*var*/ generator = new RakkaVidmeGenerator({
+			bus: bus,
+			mirror: mirrorUrl,
+			feed: $('input[name="feed"]:checked').val(),
+			channel: $('#vidmeNetwork').val(),
+			order: $('#vidmeOrder').val()
+		});
+		start(generator);
+	}
+	
+	function startFiles() {
+		/*var*/ generator = new RakkaFilesGenerator({
+			bus: bus,
+			files: fileList
+		});
+		start(generator);
+	}
+	
+	function startSource(source) {
+		switch( source ) {
+			case 'reddit': startReddit(); break;
+			case 'vidme': startVidme(); break;
+			case 'files': startFiles(); break;
+		}
+	}
+	
+	function selectSource(source) {
+		$('.js-rakka-configure[data-source="' + source + '"]').removeClass('hide');
 		return true;
 	}
 	
+	
 	function onReady() {
-		$(document).one('click', '.js-reddit-configure .js-example-start', function() {
-			/*var*/ generator = new RakkaRedditGenerator({
-				mirror: mirrorUrl,
-				subreddit: $('#subreddit').val(),
-				sort: $('#reddit-sort').val() || 'new'
-			});
-			start(generator);
+		var subredditOpts = ['EarthPorn', 'SkyPorn', 'MotorcyclePorn', 'StarshipPorn', 'FractalPorn', 'FuturePorn', 'HistoryPorn'];
+		ultraSimpleAutosuggest('#subreddit', $.map(subredditOpts, function(el) {
+			return {id: el, title: el, show_empty: true};
+		}), {allowArbitrary: true});
+		
+		$(document).on('click', '.js-rakka-configure .js-example-start', function(event) {
+			startSource($(event.target).parents('.js-rakka-configure').attr('data-source'));
 		});
 		
-		$(document).one('click', '.js-vidme-configure .js-example-start', function() {
-			/*var*/ generator = new RakkaVidmeGenerator({
-				mirror: mirrorUrl
-			});
-			start(generator);
+		$(document).on('change', '#files', function(event) {
+			fileList = event.target.files;
+			$('.js-btn-file-value').text(fileList.length + ' files');
 		});
+		
+		$(document).on('change', '#vidmeFeed', function(event) {
+			if( $(event.target).val() === 'channel' ) {
+				$('#vidmeNetwork').parent().removeClass('hide');
+				if( vidmeChannels ) {
+					return;
+				}
+				$.get('https://api.vid.me/channels', function(data) {
+					vidmeChannels = data.data;
+					for( var x in vidmeChannels ) {
+						vidmeChannels[x].id = vidmeChannels[x].channel_id;
+						vidmeChannels[x].show_empty = vidmeChannels[x].is_default;
+					}
+					ultraSimpleAutosuggest('#vidmeNetwork', vidmeChannels);
+					setTimeout(function() {
+						document.getElementById('vidmeNetwork').focus();
+					}, 10);
+				});
+			} else {
+				$('#vidmeNetwork').parent().addClass('hide');
+			}
+		});
+		
+		$(document).on('change', '#redditFeed', function(event) {
+			if( $(event.target).val() === 'subreddit' ) {
+				$('#subreddit').parent().removeClass('hide');
+			} else {
+				$('#subreddit').parent().addClass('hide');
+			}
+		});
+		
+		
+		$(document).one('click', '.js-vidme-configure .js-example-start', startVidme);
 		
 		$(document).on('click', '.js-source-select', function(event) {
-			var el = $(event.target);
-			if( startSource(el.attr('data-source')) ) {
-				$('#selector').remove();
-			}
+			selectSource($(event.target).attr('data-source'));
+			$('#selector').remove();
 		});
 	}
 	

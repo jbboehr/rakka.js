@@ -6,7 +6,8 @@
 			'./bus',
 			'./column',
 			'./image',
-			'./renderer-canvas'
+			'./renderer-canvas',
+			'./utils'
 		], factory);
     } else {
         factory(
@@ -14,10 +15,11 @@
 			window.RakkaBus,
 			window.RakkaColumn,
 			window.RakkaImage,
-			window.RakkaRendererCanvas
+			window.RakkaRendererCanvas,
+			window.RakkaUtils
 		);
     }
-}(function($, Bus, Column, Image, CanvasRenderer) {
+}(function($, Bus, Column, Image, CanvasRenderer, Utils) {
 	
 	var Rakka = function(options) {
 		this.init(options);
@@ -44,13 +46,13 @@
 		
 		// Setup generator
 		this.generator = options.generator;
-		this.consume = function() {
+		this.consume = Utils.bind(function() {
 			var i = this.generator.consume();
 			if( i ) {
 				this.imagesConsumed++;
 			}
 			return i;
-		}.bind(this);
+		}, this);
 		
 		// Setup renderer
 		this.renderer = new CanvasRenderer({
@@ -88,42 +90,43 @@
 	Rakka.prototype.bind = function() {
 		var self = this;
 		
-		this.on('rakka.start', this.start.bind(this));
-		this.on('rakka.stop', this.stop.bind(this));
-		this.on('rakka.toggle', this.toggle.bind(this));
-		this.on('rakka.direction.change', this.direction.bind(this));
-		this.on('rakka.direction.toggle', this.directionToggle.bind(this));
-		this.on('rakka.speed.change', this.speed.bind(this));
+		this.on('rakka.start', Utils.bind(this.start, this));
+		this.on('rakka.stop', Utils.bind(this.stop, this));
+		this.on('rakka.toggle', Utils.bind(this.toggle, this));
+		this.on('rakka.direction.change', Utils.bind(this.direction, this));
+		this.on('rakka.direction.toggle', Utils.bind(this.directionToggle, this));
+		this.on('rakka.speed.change', Utils.bind(this.speed, this));
 		
-		this.on('rakka.setBufferSize', this.bufferSize.bind(this));
-		this.on('rakka.setColumns', this.columns.bind(this));
+		this.on('rakka.setBufferSize', Utils.bind(this.bufferSize, this));
+		this.on('rakka.setColumns', Utils.bind(this.columns, this));
 		
-		this.on('rakka.speed.emit', function() {
-			self.trigger('rakka.speed.changed', self._speed);
-		});
-		this.on('rakka.stats.emit', function() {
+		this.on('rakka.speed.emit', Utils.bind(function() {
+			this.trigger('rakka.speed.changed', this._speed);
+		}, this));
+		
+		this.on('rakka.stats.emit', Utils.bind(function() {
 			var stats = {
-				imagesLoading : self.generator.semaphore,
-				imagesPreloaded : self.generator.count(),
-				imagesConsumed : self.imagesConsumed,
-				fps : self.fps,
-				fpsSmooth : self.fpsSmooth,
-				speed : self._speed,
-				width : self.width,
-				height : self.height,
-				bufferWidth : self.width,
-				bufferHeight : self.bufferHeight,
+				imagesLoading : this.generator.semaphore,
+				imagesPreloaded : this.generator.count(),
+				imagesConsumed : this.imagesConsumed,
+				fps : this.fps,
+				fpsSmooth : this.fpsSmooth,
+				speed : this._speed,
+				width : this.width,
+				height : this.height,
+				bufferWidth : this.width,
+				bufferHeight : this.bufferHeight,
 			};
-			self.trigger('rakka.stats', stats);
-		});
+			this.trigger('rakka.stats', stats);
+		}, this));
 		
-		this.$container.on('click', function(event) {
+		this.$container.on('click', Utils.bind(function(event) {
 			var absY = this.cursor - (this.height - event.offsetY);
 			var image = this.getImageAtPosition(event.offsetX, absY);
 			if( image ) {
 				this.trigger('rakka.image.click', image);
 			}
-		}.bind(this));
+		}, this));
 	};
 	
 	Rakka.prototype.getImageAtPosition = function(x, y) {
@@ -146,7 +149,7 @@
 		this.calculateCursor();
 		this.draw();
 		
-		this.interval = requestAnimationFrame(this.loop.bind(this));
+		this.interval = Utils.requestAnimationFrame(Utils.bind(this.loop, this));
 	};
 	
 	Rakka.prototype.calculateDelta = function(ts) {
@@ -271,10 +274,8 @@
 			var i = l - columns;
 			while(i--) {
 				var column = this._columns.pop();
-				// @todo maybe put the images back into the preload cache?
-				// @todo remove from ui-list
-				this.bus.detach(column);
 				this.trigger('rakka.column.remove', column);
+				column.dispose();
 			}
 		} else {
 			return this;
@@ -357,7 +358,7 @@
 			return;
 		}
 		
-		this.interval = requestAnimationFrame(this.loop.bind(this));
+		this.interval = Utils.requestAnimationFrame(Utils.bind(this.loop, this));
 		
 		// fire event
 		this.bus.trigger('rakka.started');
@@ -371,7 +372,7 @@
 		}
 		
 		//clearInterval(this.interval);
-		cancelAnimationFrame(this.interval);
+		Utils.cancelAnimationFrame(this.interval);
 		this.interval = undefined;
 		
 		// Clear timer
@@ -390,45 +391,6 @@
 			this.start();
 		}
 	};
-	
-	
-	
-	// requestAnimationFrame polyfill
-	// Based on: https://gist.github.com/paulirish/1579671
-	var requestAnimationFrame = window.requestAnimationFrame;
-	var cancelAnimationFrame = window.cancelAnimationFrame;
-	(function() {
-		var lastTime = 0;
-		var vendors = ['ms', 'moz', 'webkit', 'o'];
-		for(var x = 0; x < vendors.length && !requestAnimationFrame; ++x) {
-			requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
-			cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] 
-									   || window[vendors[x]+'CancelRequestAnimationFrame'];
-		}
-	 
-		if( !requestAnimationFrame ) {
-			var timeToCallDelta = 0;
-			var timeToCallTarget = 1000 / 60;
-			requestAnimationFrame = function(callback, element) {
-				var currTime = Date.now();
-				var timeToCall = Math.max(0, Math.round(16 - (currTime - lastTime) + timeToCallDelta));
-				var id = window.setTimeout(function() {
-					lastTime = Date.now();
-					var timeToCallActual = lastTime - currTime;
-					timeToCallDelta += (timeToCallTarget - timeToCallActual);
-					callback(lastTime);
-				}, timeToCall);
-				return id;
-			};
-		}
-	 
-		if( !cancelAnimationFrame ) {
-			cancelAnimationFrame = function(id) {
-				lastTime = 0;
-				clearTimeout(id);
-			};
-		}
-	}());
 	
 	
 	

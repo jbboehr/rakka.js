@@ -1,11 +1,17 @@
 
 (function (factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery'], factory);
+        define([
+			'jquery',
+			'./utils'
+		], factory);
     } else {
-        factory(window.jQuery);
+        factory(
+			window.jQuery,
+			window.RakkaUtils
+		);
     }
-}(function($) {
+}(function($, Utils) {
 	
 	function Bus() {
 		this._events = {};
@@ -72,9 +78,9 @@
 			
 			// Run the callback
 			if( async || ev.async ) {
-				setTimeout(function() {
+				setTimeout(Utils.bind(function() {
 					this.apply(null, args);
-				}.bind(cb), 0);
+				}, cb), 0);
 			} else {
 				cb.apply(null, args);
 			}
@@ -96,14 +102,14 @@
 	};
 	
 	Bus.prototype.proxy = function(object) {
-		object.on = function(name, cb) {
+		object.on = Utils.bind(function(name, cb) {
 			this.on(name, cb, object);
-		}.bind(this);
-		object.one = function(name, cb) {
+		}, this);
+		object.one = Utils.bind(function(name, cb) {
 			this.one(name, cb, object);
-		}.bind(this);
-		object.off = this.off.bind(this);
-		object.trigger = this.trigger.bind(this);
+		}, this);
+		object.off = Utils.bind(this.off, this);
+		object.trigger = Utils.bind(this.trigger, this);
 		return this;
 	};
 	

@@ -28,6 +28,16 @@
 		}
 	};
 	
+	Column.prototype.dispose = function() {
+		// @todo maybe put the images back into the preload cache?
+		this.bus.detach(this);
+		delete this.bus;
+		for( var i = 0; i < this.images.length; i++ ) {
+			this.images[0].dispose();
+		}
+		return this;
+	};
+	
 	Column.prototype.getImageAtPosition = function(y, circCount) {
 		for( var i = this.images.length - 1; i >= 0; i-- ) {
 			var image = this.images[i];
@@ -100,10 +110,6 @@
 			
 			// Trigger the new image event
 			this.trigger('rakka.image.new', image);
-			
-			// Draw
-			//this.drawImage(image);
-			
 		} while(1);
 		
 		this.inFill = false;
@@ -114,12 +120,13 @@
 		// Garbage collect the images
 		var gced = false;
 		while( this.images.length ) {
-			var i = this.images[0];
-			var d = this.nextCircCount - i.circCount;
-			if( d >= 2 || (d === 1 && i.cursor < this.nextCursor) ) {
+			var image = this.images[0];
+			var d = this.nextCircCount - image.circCount;
+			if( d >= 2 || (d === 1 && image.cursor < this.nextCursor) ) {
 				gced = true;
-				this.trigger('rakka.image.gc', i);
+				this.trigger('rakka.image.gc', image);
 				this.images.shift();
+				image.dispose();
 			} else {
 				break;
 			}

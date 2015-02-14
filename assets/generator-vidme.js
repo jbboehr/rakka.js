@@ -15,27 +15,45 @@
     }
 }(function($, Image, Generator) {
 	
-	var defaultParams = {
-		order : 'video_id',
-		direction : 'DESC',
-		//maxVideoId : maxVideoId,
-		moderated : 1,
-		nsfw: 0,
-		private: 0
-	};
+	var defaultParams = {};
 	
 	var VidmeGenerator = function(options) {
-		this.init(options);
+		Generator.prototype.constructor.call(this, options);
+		
 		this.data = $.extend({}, defaultParams, options && options.data || {});
 		this.data.limit = this.batchSize;
-		if( !this.url ) {
-			this.url = 'https://api.vid.me/videos/list';
-		}
+		this.url = this.makeUrl(options);
 		this.maxVideoId = undefined;
 		this.cacheBust = 1;
+		this.offset = 0;
 	};
 	
-	VidmeGenerator.prototype = new Generator();
+	VidmeGenerator.prototype = Object.create(Generator.prototype);
+	
+	VidmeGenerator.prototype.makeUrl = function(options) {
+		if( options && options.url ) {
+			return options.url;
+		} else if( !options ) {
+			this.useMaxVideoId = true;
+			return 'https://api.vid.me/videos/list';
+		}
+		var feed = options.feed;
+		var channel = options.channel;
+		var order = options.order;
+		var url = 'https://api.vid.me/';
+		if( feed === 'channel' ) {
+			url += 'channel/' + channel + '/' + order;
+		} else if( feed === 'frontpage' ) {
+			url += 'videos/frontpage/' + order;
+		} else if( order === 'hot' ) {
+			url += 'videos/hot';
+		} else {
+			this.useMaxVideoId = true;
+			url += 'videos/list';
+		}
+		
+		return url;
+	};
 	
 	VidmeGenerator.prototype.getBatch = function() {
 		if( this.semaphore > 0 ) {
@@ -43,8 +61,23 @@
 		}
 		this.semaphore++;
 		
-		if( this.maxVideoId ) {
-			this.data.maxVideoId = this.maxVideoId;
+		// Check time since last batch
+		var now = Date.now();
+		if( now - this.lastRequestTs < 2000 ) {
+			this.semaphore--;
+			return this;
+		}
+		this.lastRequestTs = now;
+		
+		// Check the paging parameter to use
+		if( this.useMaxVideoId ) {
+			if( this.maxVideoId ) {
+				this.data.maxVideoId = this.maxVideoId;
+			}
+		} else {
+			if( this.offset ) {
+				this.data.offset = this.offset;
+			}
 		}
 		
 		var self = this;
@@ -64,6 +97,7 @@
 			url: this.url,
 			data: this.data
 		}).done(function(data) {
+			self.offset += data.videos.length;
 			$.each(data.videos, fn);
 			self.semaphore--;
 		}).error(function() {
