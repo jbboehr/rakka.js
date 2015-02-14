@@ -89,3 +89,48 @@ body {
     cursor: inherit;
     display: block;
 }
+
+
+
+/* ultra simple suggest */
+
+input.ultra-simple-suggest {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.ultra-simple-suggest {
+	position: relative;
+}
+
+.ultra-simple-suggest > ul {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+	background-color: #fff;
+	border: 1px solid #ccc;
+	border-top: none;
+}
+
+.ultra-simple-suggest > ul > li {
+	padding: 0;
+	margin: 0;
+}
+
+.ultra-simple-suggest > ul > li > a {
+	display: block;
+	padding: 0.5em;
+	text-decoration: none;
+	cursor: pointer;
+	color: #333;
+}
+
+.ultra-simple-suggest > ul > li.active > a,
+.ultra-simple-suggest > ul > li > a:hover {
+	background-color: #333;
+	color: #fff;
+}
